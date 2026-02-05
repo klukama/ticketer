@@ -1,6 +1,6 @@
 'use client'
 
-import { Container, Title, Text, Card, Group, Badge, Button, Stack, Modal, TextInput, Textarea, Table, Paper, Tabs } from '@mantine/core'
+import { Container, Title, Text, Card, Group, Badge, Button, Stack, Modal, TextInput, Textarea, Table, Paper } from '@mantine/core'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { notifications } from '@mantine/notifications'
 import { useState } from 'react'
@@ -192,7 +192,7 @@ export default function AdminPage() {
   }
 
   const handleDelete = (id: string, title: string) => {
-    if (confirm(`Are you sure you want to delete "${title}"?`)) {
+    if (confirm(`Are you sure you want to delete &quot;${title}&quot;?`)) {
       deleteEventMutation.mutate(id)
     }
   }
@@ -282,7 +282,7 @@ export default function AdminPage() {
 
         {!isLoading && events?.length === 0 && (
           <Text c="dimmed" ta="center" py="xl">
-            No events created yet. Click "Create New Event" to get started.
+            No events created yet. Click &quot;Create New Event&quot; to get started.
           </Text>
         )}
       </Stack>
