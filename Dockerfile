@@ -20,7 +20,8 @@ COPY . .
 
 # Set environment variables for build
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV DATABASE_URL="file:./dev.db"
+# Use a placeholder DATABASE_URL for build - actual URL will be provided at runtime
+ENV DATABASE_URL="mysql://user:password@localhost:3306/ticketer"
 
 # Generate Prisma Client
 RUN npm run db:generate
@@ -45,6 +46,11 @@ COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+COPY --from=builder /app/package.json ./package.json
+
+# Copy entrypoint script
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
 
 RUN chown -R nextjs:nodejs /app
 
@@ -55,4 +61,4 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["node", "server.js"]
+ENTRYPOINT ["/docker-entrypoint.sh"]
