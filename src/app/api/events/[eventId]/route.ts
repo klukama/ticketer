@@ -29,3 +29,88 @@ export async function GET(
     return NextResponse.json({ error: 'Failed to fetch event' }, { status: 500 })
   }
 }
+
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ eventId: string }> }
+) {
+  try {
+    const { eventId } = await params
+    const body = await request.json()
+    const { title, description, venue, date, totalSeats, imageUrl } = body
+
+    // Check if event exists
+    const existingEvent = await prisma.event.findUnique({
+      where: { id: eventId }
+    })
+
+    if (!existingEvent) {
+      return NextResponse.json({ error: 'Event not found' }, { status: 404 })
+    }
+
+    // Validate totalSeats if provided
+    if (totalSeats !== undefined && (typeof totalSeats !== 'number' || totalSeats <= 0)) {
+      return NextResponse.json(
+        { error: 'totalSeats must be a positive number' },
+        { status: 400 }
+      )
+    }
+
+    // Validate date if provided
+    if (date !== undefined) {
+      const parsedDate = new Date(date)
+      if (isNaN(parsedDate.getTime())) {
+        return NextResponse.json(
+          { error: 'Invalid date format' },
+          { status: 400 }
+        )
+      }
+    }
+
+    // Update the event
+    const event = await prisma.event.update({
+      where: { id: eventId },
+      data: {
+        ...(title !== undefined && { title }),
+        ...(description !== undefined && { description }),
+        ...(venue !== undefined && { venue }),
+        ...(date !== undefined && { date: new Date(date) }),
+        ...(totalSeats !== undefined && { totalSeats }),
+        ...(imageUrl !== undefined && { imageUrl }),
+      }
+    })
+
+    return NextResponse.json(event)
+  } catch (error) {
+    console.error('Error updating event:', error)
+    return NextResponse.json({ error: 'Failed to update event' }, { status: 500 })
+  }
+}
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ eventId: string }> }
+) {
+  try {
+    const { eventId } = await params
+
+    // Check if event exists
+    const existingEvent = await prisma.event.findUnique({
+      where: { id: eventId }
+    })
+
+    if (!existingEvent) {
+      return NextResponse.json({ error: 'Event not found' }, { status: 404 })
+    }
+
+    // Delete the event (seats will be deleted automatically due to onDelete: Cascade)
+    await prisma.event.delete({
+      where: { id: eventId }
+    })
+
+    return NextResponse.json({ message: 'Event deleted successfully' })
+  } catch (error) {
+    console.error('Error deleting event:', error)
+    return NextResponse.json({ error: 'Failed to delete event' }, { status: 500 })
+  }
+}

@@ -29,7 +29,12 @@ export default function Home() {
 
   return (
     <Container size="lg" py="xl">
-      <Title order={1} mb="lg">What's On</Title>
+      <Group justify="space-between" mb="lg">
+        <Title order={1}>What&apos;s On</Title>
+        <Link href="/admin">
+          <Button variant="subtle" color="gray">Admin Panel</Button>
+        </Link>
+      </Group>
       <Text size="lg" c="dimmed" mb="xl">
         Browse upcoming events and book your seats
       </Text>
