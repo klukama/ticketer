@@ -22,9 +22,47 @@ A modern event ticketing and seat selection system built with Next.js, React, Ma
 ### Prerequisites
 
 - Node.js 18+ installed
-- MySQL database (or use SQLite for development)
+- MySQL database (for production) or SQLite (for local development)
+- Docker and Docker Compose (for containerized deployment)
 
-### Installation
+### Local Development Setup
+
+#### Option 1: Using SQLite (Simpler for Development)
+
+1. Install dependencies:
+```bash
+npm install
+```
+
+2. Update `prisma/schema.prisma` to use SQLite:
+```prisma
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+```
+
+3. Create a `.env` file:
+```env
+DATABASE_URL="file:./dev.db"
+```
+
+4. Push the database schema:
+```bash
+npm run db:push
+```
+
+5. Generate Prisma Client:
+```bash
+npm run db:generate
+```
+
+6. Seed the database:
+```bash
+npm run db:seed
+```
+
+#### Option 2: Using MySQL (Production-like)
 
 1. Install dependencies:
 ```bash
@@ -36,18 +74,7 @@ npm install
 DATABASE_URL="mysql://user:password@localhost:3306/ticketer"
 ```
 
-For development with SQLite (no MySQL required):
-```env
-DATABASE_URL="file:./dev.db"
-```
-
-If using SQLite, update `prisma/schema.prisma`:
-```prisma
-datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
-}
-```
+Note: `prisma/schema.prisma` is already configured for MySQL.
 
 3. Push the database schema:
 ```bash
@@ -59,7 +86,7 @@ npm run db:push
 npm run db:generate
 ```
 
-5. Seed the database with sample events:
+5. Seed the database:
 ```bash
 npm run db:seed
 ```
@@ -93,49 +120,65 @@ npm start
 
 ## Docker Deployment
 
-The application is fully containerized and can be run using Docker.
+The application is fully containerized and can be run using Docker with MySQL.
 
 ### Using Docker Compose (Recommended)
 
-The easiest way to run the application:
+The easiest way to run the application with MySQL:
 
 ```bash
-# Build and start the container
-docker-compose up -d
+# Build and start all containers (MySQL + App)
+docker compose up -d
 
 # View logs
-docker-compose logs -f
+docker compose logs -f
 
-# Stop the container
-docker-compose down
+# View logs for specific service
+docker compose logs -f ticketer
+docker compose logs -f mysql
+
+# Stop and remove all containers
+docker compose down
+
+# Stop and remove all containers including volumes (this will delete the database)
+docker compose down -v
 ```
 
 The application will be available at [http://localhost:3000](http://localhost:3000).
 
-### Using Docker CLI
-
-Build the Docker image:
-```bash
-docker build -t ticketer .
-```
-
-Run the container:
-```bash
-docker run -p 3000:3000 -v $(pwd)/prisma/dev.db:/app/prisma/dev.db ticketer
-```
+**Note:** The first time you run `docker compose up`, it will:
+1. Start the MySQL container and wait for it to be healthy
+2. Build the application container
+3. Run database migrations automatically
+4. Seed the database with sample events
 
 ### Docker Configuration
 
 - The Dockerfile uses a multi-stage build for optimized image size
-- SQLite database is used by default and persists via volume mount
-- Environment variables can be configured in `docker-compose.yml` or passed via `-e` flag
-- The application runs on port 3000 inside the container
+- **MySQL 8.0** is used as the database and runs in a separate container
+- Database data persists in a Docker volume named `mysql-data`
+- The application waits for MySQL to be healthy before starting
+- Database migrations and seeding run automatically on container startup
+- Environment variables are configured in `docker-compose.yml`
+- The application runs on port 3000, MySQL on port 3306
+
+### MySQL Credentials (Docker)
+
+Default credentials configured in `docker-compose.yml`:
+- **Host:** localhost (or `mysql` from within the app container)
+- **Port:** 3306
+- **Database:** ticketer
+- **User:** ticketer
+- **Password:** ticketerpassword
+- **Root Password:** rootpassword
+
+**Important:** Change these credentials in production!
 
 ### Environment Variables for Docker
 
-Create a `.env` file based on `.env.example`:
+The database connection is configured in `docker-compose.yml`:
 ```env
-DATABASE_URL="file:./prisma/dev.db"
+DATABASE_URL="mysql://ticketer:ticketerpassword@mysql:3306/ticketer"
 NEXT_TELEMETRY_DISABLED=1
 ```
 
