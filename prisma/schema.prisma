@@ -24,6 +24,8 @@ model Event {
   leftCols    Int      @default(5)  // Number of columns in left section
   rightRows   Int      @default(6)  // Number of rows in right section
   rightCols   Int      @default(5)  // Number of columns in right section
+  backRows    Int      @default(0)  // Number of rows in back section
+  backCols    Int      @default(0)  // Number of columns in back section
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   seats       Seat[]
@@ -35,7 +37,7 @@ model Seat {
   event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
   row       String
   number    Int
-  section   String   @default("LEFT")  // LEFT or RIGHT
+  section   String   @default("LEFT")  // LEFT, RIGHT, or BACK
   status    String   @default("AVAILABLE")
   bookedBy  String?
   bookedAt  DateTime?

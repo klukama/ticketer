@@ -26,7 +26,7 @@ export async function PATCH(
   { params }: { params: Promise<{ eventId: string }> }
 ) {
   try {
-    const { eventId } = await params
+    await params // Ensure params is awaited
     const body = await request.json()
     const { seatId, status, bookedBy } = body
 
