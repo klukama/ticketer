@@ -12,11 +12,11 @@ services:
       - NODE_ENV=production
       - DATABASE_URL=file:./prisma/dev.db
     volumes:
-      # Mount the database file to persist data
-      - ./prisma/dev.db:/app/prisma/dev.db
+      # Mount the entire prisma directory to persist database and related files
+      - ./prisma:/app/prisma
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:3000', (r) => process.exit(r.statusCode === 200 ? 0 : 1))\""]
       interval: 30s
       timeout: 10s
       retries: 3

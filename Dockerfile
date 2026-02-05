@@ -46,9 +46,6 @@ COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 
-# Copy database file for SQLite (development)
-COPY --from=builder /app/prisma/dev.db ./prisma/dev.db 2>/dev/null || true
-
 RUN chown -R nextjs:nodejs /app
 
 USER nextjs
