@@ -79,6 +79,54 @@ npm run build
 npm start
 ```
 
+## Docker Deployment
+
+The application is fully containerized and can be run using Docker.
+
+### Using Docker Compose (Recommended)
+
+The easiest way to run the application:
+
+```bash
+# Build and start the container
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop the container
+docker-compose down
+```
+
+The application will be available at [http://localhost:3000](http://localhost:3000).
+
+### Using Docker CLI
+
+Build the Docker image:
+```bash
+docker build -t ticketer .
+```
+
+Run the container:
+```bash
+docker run -p 3000:3000 -v $(pwd)/prisma/dev.db:/app/prisma/dev.db ticketer
+```
+
+### Docker Configuration
+
+- The Dockerfile uses a multi-stage build for optimized image size
+- SQLite database is used by default and persists via volume mount
+- Environment variables can be configured in `docker-compose.yml` or passed via `-e` flag
+- The application runs on port 3000 inside the container
+
+### Environment Variables for Docker
+
+Create a `.env` file based on `.env.example`:
+```env
+DATABASE_URL="file:./prisma/dev.db"
+NEXT_TELEMETRY_DISABLED=1
+```
+
 ## Project Structure
 
 - `/src/app` - Next.js app directory with pages and API routes
