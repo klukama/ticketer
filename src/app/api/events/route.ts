@@ -23,6 +23,22 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { title, description, venue, date, totalSeats, imageUrl } = body
 
+    // Validate required fields
+    if (!title || !venue || !date || !totalSeats) {
+      return NextResponse.json(
+        { error: 'Missing required fields: title, venue, date, and totalSeats are required' },
+        { status: 400 }
+      )
+    }
+
+    // Validate totalSeats is a positive number
+    if (typeof totalSeats !== 'number' || totalSeats <= 0) {
+      return NextResponse.json(
+        { error: 'totalSeats must be a positive number' },
+        { status: 400 }
+      )
+    }
+
     const event = await prisma.event.create({
       data: {
         title,

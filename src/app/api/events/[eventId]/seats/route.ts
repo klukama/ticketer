@@ -30,6 +30,31 @@ export async function PATCH(
     const body = await request.json()
     const { seatId, status, bookedBy } = body
 
+    // Validate input
+    if (!seatId || !status) {
+      return NextResponse.json(
+        { error: 'Missing required fields: seatId and status are required' },
+        { status: 400 }
+      )
+    }
+
+    // Get the current seat to check its status
+    const currentSeat = await prisma.seat.findUnique({
+      where: { id: seatId }
+    })
+
+    if (!currentSeat) {
+      return NextResponse.json({ error: 'Seat not found' }, { status: 404 })
+    }
+
+    // Prevent booking if seat is not available (race condition protection)
+    if (status === 'BOOKED' && currentSeat.status !== 'AVAILABLE') {
+      return NextResponse.json(
+        { error: 'Seat is no longer available' },
+        { status: 409 }
+      )
+    }
+
     const seat = await prisma.seat.update({
       where: { id: seatId },
       data: {

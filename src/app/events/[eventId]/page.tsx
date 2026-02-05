@@ -1,7 +1,8 @@
 'use client'
 
-import { Container, Title, Text, Badge, Button, Group, Stack, Grid, Paper } from '@mantine/core'
+import { Container, Title, Text, Badge, Button, Group, Stack, Paper, TextInput } from '@mantine/core'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { notifications } from '@mantine/notifications'
 import { use, useState } from 'react'
 import Link from 'next/link'
 
@@ -60,7 +61,18 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
       queryClient.invalidateQueries({ queryKey: ['event', eventId] })
       setSelectedSeats([])
       setCustomerName('')
-      alert('Seats booked successfully!')
+      notifications.show({
+        title: 'Success!',
+        message: 'Your seats have been booked successfully.',
+        color: 'green',
+      })
+    },
+    onError: () => {
+      notifications.show({
+        title: 'Error',
+        message: 'Failed to book seats. Please try again.',
+        color: 'red',
+      })
     },
   })
 
@@ -151,18 +163,13 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
             <Title order={3} size="h4" mb="md">Complete Booking</Title>
             <Text mb="md">Selected seats: {selectedSeats.length}</Text>
             
-            <input
-              type="text"
-              placeholder="Your name"
+            <TextInput
+              label="Your name"
+              placeholder="Enter your name"
               value={customerName}
               onChange={(e) => setCustomerName(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '8px 12px',
-                marginBottom: '16px',
-                borderRadius: '4px',
-                border: '1px solid #dee2e6',
-              }}
+              mb="md"
+              required
             />
 
             <Group gap="md">
