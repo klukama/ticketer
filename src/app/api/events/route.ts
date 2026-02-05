@@ -21,7 +21,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { title, description, venue, date, totalSeats, imageUrl } = body
+    const { title, description, venue, date, totalSeats, imageUrl, leftRows, leftCols, rightRows, rightCols } = body
 
     // Validate required fields
     if (!title || !venue || !date || !totalSeats) {
@@ -39,6 +39,12 @@ export async function POST(request: Request) {
       )
     }
 
+    // Set defaults for seating configuration
+    const leftRowsCount = leftRows || 6
+    const leftColsCount = leftCols || 5
+    const rightRowsCount = rightRows || 6
+    const rightColsCount = rightCols || 5
+
     const event = await prisma.event.create({
       data: {
         title,
@@ -47,20 +53,43 @@ export async function POST(request: Request) {
         date: new Date(date),
         totalSeats,
         imageUrl,
+        leftRows: leftRowsCount,
+        leftCols: leftColsCount,
+        rightRows: rightRowsCount,
+        rightCols: rightColsCount,
       },
     })
 
     // Create seats for the event
     const seats = []
-    const rows = ['A', 'B', 'C', 'D', 'E', 'F']
-    const seatsPerRow = Math.ceil(totalSeats / rows.length)
+    const maxRows = Math.max(leftRowsCount, rightRowsCount)
+    
+    // Generate row labels (A, B, C, ...)
+    const getRowLabel = (index: number) => String.fromCharCode(65 + index) // 65 is 'A'
 
-    for (const row of rows) {
-      for (let i = 1; i <= seatsPerRow; i++) {
+    // Create left section seats
+    for (let rowIndex = 0; rowIndex < leftRowsCount; rowIndex++) {
+      const row = getRowLabel(rowIndex)
+      for (let i = 1; i <= leftColsCount; i++) {
         seats.push({
           eventId: event.id,
           row,
           number: i,
+          section: 'LEFT',
+          status: 'AVAILABLE',
+        })
+      }
+    }
+
+    // Create right section seats
+    for (let rowIndex = 0; rowIndex < rightRowsCount; rowIndex++) {
+      const row = getRowLabel(rowIndex)
+      for (let i = 1; i <= rightColsCount; i++) {
+        seats.push({
+          eventId: event.id,
+          row,
+          number: i,
+          section: 'RIGHT',
           status: 'AVAILABLE',
         })
       }

@@ -11,6 +11,7 @@ interface Seat {
   eventId: string
   row: string
   number: number
+  section: string
   status: 'AVAILABLE' | 'RESERVED' | 'BOOKED'
   bookedBy: string | null
   bookedAt: string | null
@@ -23,6 +24,10 @@ interface Event {
   venue: string
   date: string
   totalSeats: number
+  leftRows: number
+  leftCols: number
+  rightRows: number
+  rightCols: number
   seats: Seat[]
 }
 
@@ -96,11 +101,27 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
   if (isLoading) return <Container size="lg" py="xl"><Text>Loading...</Text></Container>
   if (!event) return <Container size="lg" py="xl"><Text>Event not found</Text></Container>
 
-  const seatsByRow = event.seats.reduce((acc, seat) => {
-    if (!acc[seat.row]) acc[seat.row] = []
-    acc[seat.row].push(seat)
-    return acc
-  }, {} as Record<string, Seat[]>)
+  // Group seats by section and row
+  const leftSeats = event.seats.filter(seat => seat.section === 'LEFT')
+  const rightSeats = event.seats.filter(seat => seat.section === 'RIGHT')
+
+  const groupByRow = (seats: Seat[]) => {
+    return seats.reduce((acc, seat) => {
+      if (!acc[seat.row]) acc[seat.row] = []
+      acc[seat.row].push(seat)
+      return acc
+    }, {} as Record<string, Seat[]>)
+  }
+
+  const leftSeatsByRow = groupByRow(leftSeats)
+  const rightSeatsByRow = groupByRow(rightSeats)
+
+  // Get all unique rows and sort them in REVERSE alphabetical order (Z to A)
+  // This makes A closest to the stage (bottom)
+  const allRows = Array.from(new Set([
+    ...Object.keys(leftSeatsByRow),
+    ...Object.keys(rightSeatsByRow)
+  ])).sort().reverse()
 
   return (
     <Container size="lg" py="xl">
@@ -123,27 +144,68 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
           <Title order={2} size="h3" mb="md">Select Your Seats</Title>
           
           <Stack gap="sm">
-            {Object.entries(seatsByRow).map(([row, seats]) => (
-              <Group key={row} gap="xs">
-                <Text fw={700} w={30}>{row}</Text>
-                <Group gap="xs">
-                  {seats.map(seat => (
-                    <Button
-                      key={seat.id}
-                      size="sm"
-                      color={getSeatColor(seat)}
-                      variant={selectedSeats.includes(seat.id) ? 'filled' : 'light'}
-                      onClick={() => toggleSeat(seat.id, seat.status)}
-                      disabled={seat.status !== 'AVAILABLE'}
-                      style={{ width: 50 }}
-                    >
-                      {seat.number}
-                    </Button>
-                  ))}
+            {allRows.map((row) => (
+              <Group key={row} gap="md" justify="center" align="flex-start">
+                {/* Left Section */}
+                <Group gap="xs" justify="flex-end" style={{ minWidth: '300px' }}>
+                  <Text fw={700} w={30}>{row}</Text>
+                  <Group gap="xs">
+                    {(leftSeatsByRow[row] || []).sort((a, b) => a.number - b.number).map(seat => (
+                      <Button
+                        key={seat.id}
+                        size="sm"
+                        color={getSeatColor(seat)}
+                        variant={selectedSeats.includes(seat.id) ? 'filled' : 'light'}
+                        onClick={() => toggleSeat(seat.id, seat.status)}
+                        disabled={seat.status !== 'AVAILABLE'}
+                        style={{ width: 50 }}
+                      >
+                        {seat.number}
+                      </Button>
+                    ))}
+                  </Group>
+                </Group>
+
+                {/* Aisle/Gap between sections */}
+                <div style={{ width: '60px' }} />
+
+                {/* Right Section */}
+                <Group gap="xs" justify="flex-start" style={{ minWidth: '300px' }}>
+                  <Group gap="xs">
+                    {(rightSeatsByRow[row] || []).sort((a, b) => a.number - b.number).map(seat => (
+                      <Button
+                        key={seat.id}
+                        size="sm"
+                        color={getSeatColor(seat)}
+                        variant={selectedSeats.includes(seat.id) ? 'filled' : 'light'}
+                        onClick={() => toggleSeat(seat.id, seat.status)}
+                        disabled={seat.status !== 'AVAILABLE'}
+                        style={{ width: 50 }}
+                      >
+                        {seat.number}
+                      </Button>
+                    ))}
+                  </Group>
+                  <Text fw={700} w={30}>{row}</Text>
                 </Group>
               </Group>
             ))}
           </Stack>
+
+          {/* Stage */}
+          <Paper 
+            mt="lg" 
+            p="md" 
+            ta="center"
+            style={{ 
+              backgroundColor: '#adb5bd',
+              color: '#fff',
+              fontWeight: 700,
+              fontSize: '1.2rem'
+            }}
+          >
+            Bühne
+          </Paper>
 
           <Group gap="md" mt="lg">
             <Group gap="xs">
