@@ -33,6 +33,15 @@ interface EventWithSeats extends Event {
   seats: Seat[]
 }
 
+interface EventWithConfig extends Event {
+  leftRows: number
+  leftCols: number
+  rightRows: number
+  rightCols: number
+  backRows: number
+  backCols: number
+}
+
 export default function AdminPage() {
   const [createModalOpen, setCreateModalOpen] = useState(false)
   const [editModalOpen, setEditModalOpen] = useState(false)
@@ -192,6 +201,7 @@ export default function AdminPage() {
     const minutes = String(eventDate.getMinutes()).padStart(2, '0')
     const formattedDate = `${year}-${month}-${day}T${hours}:${minutes}`
     
+    const eventWithConfig = event as EventWithConfig
     setFormData({
       title: event.title,
       description: event.description || '',
@@ -199,12 +209,12 @@ export default function AdminPage() {
       date: formattedDate,
       totalSeats: event.totalSeats,
       imageUrl: event.imageUrl || '',
-      leftRows: (event as any).leftRows || 6,
-      leftCols: (event as any).leftCols || 5,
-      rightRows: (event as any).rightRows || 6,
-      rightCols: (event as any).rightCols || 5,
-      backRows: (event as any).backRows || 0,
-      backCols: (event as any).backCols || 0,
+      leftRows: eventWithConfig.leftRows || 6,
+      leftCols: eventWithConfig.leftCols || 5,
+      rightRows: eventWithConfig.rightRows || 6,
+      rightCols: eventWithConfig.rightCols || 5,
+      backRows: eventWithConfig.backRows || 0,
+      backCols: eventWithConfig.backCols || 0,
     })
     setEditModalOpen(true)
   }

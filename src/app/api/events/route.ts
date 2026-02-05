@@ -66,7 +66,6 @@ export async function POST(request: Request) {
 
     // Create seats for the event
     const seats = []
-    const maxRows = Math.max(leftRowsCount, rightRowsCount)
     
     // Generate row labels (A, B, C, ...)
     const getRowLabel = (index: number) => String.fromCharCode(65 + index) // 65 is 'A'
