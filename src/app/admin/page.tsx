@@ -171,11 +171,20 @@ export default function AdminPage() {
 
   const openEditModal = (event: Event) => {
     setSelectedEvent(event)
+    // Format date to YYYY-MM-DDTHH:MM for datetime-local input
+    const eventDate = new Date(event.date)
+    const year = eventDate.getFullYear()
+    const month = String(eventDate.getMonth() + 1).padStart(2, '0')
+    const day = String(eventDate.getDate()).padStart(2, '0')
+    const hours = String(eventDate.getHours()).padStart(2, '0')
+    const minutes = String(eventDate.getMinutes()).padStart(2, '0')
+    const formattedDate = `${year}-${month}-${day}T${hours}:${minutes}`
+    
     setFormData({
       title: event.title,
       description: event.description || '',
       venue: event.venue,
-      date: event.date.split('T')[0],
+      date: formattedDate,
       totalSeats: event.totalSeats,
       imageUrl: event.imageUrl || '',
     })
@@ -198,6 +207,7 @@ export default function AdminPage() {
   }
 
   const bookedSeats = bookingsEvent?.seats.filter(s => s.status === 'BOOKED') || []
+  const currentDate = new Date()
 
   return (
     <Container size="xl" py="xl">
@@ -221,7 +231,7 @@ export default function AdminPage() {
       <Stack gap="md">
         {events?.map((event) => {
           const eventDate = new Date(event.date)
-          const isPast = eventDate < new Date()
+          const isPast = eventDate < currentDate
           
           return (
             <Card key={event.id} shadow="sm" padding="lg" radius="md" withBorder>

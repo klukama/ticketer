@@ -48,6 +48,25 @@ export async function PATCH(
       return NextResponse.json({ error: 'Event not found' }, { status: 404 })
     }
 
+    // Validate totalSeats if provided
+    if (totalSeats !== undefined && (typeof totalSeats !== 'number' || totalSeats <= 0)) {
+      return NextResponse.json(
+        { error: 'totalSeats must be a positive number' },
+        { status: 400 }
+      )
+    }
+
+    // Validate date if provided
+    if (date !== undefined) {
+      const parsedDate = new Date(date)
+      if (isNaN(parsedDate.getTime())) {
+        return NextResponse.json(
+          { error: 'Invalid date format' },
+          { status: 400 }
+        )
+      }
+    }
+
     // Update the event
     const event = await prisma.event.update({
       where: { id: eventId },
