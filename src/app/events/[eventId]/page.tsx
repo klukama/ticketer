@@ -3,7 +3,7 @@
 import { Container, Title, Text, Badge, Button, Group, Stack, Paper, TextInput } from '@mantine/core'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { notifications } from '@mantine/notifications'
-import { use, useState } from 'react'
+import { use, useState, useMemo } from 'react'
 import Link from 'next/link'
 
 interface Seat {
@@ -40,6 +40,7 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
   const [customerLastName, setCustomerLastName] = useState('')
   const [sellerFirstName, setSellerFirstName] = useState('')
   const [sellerLastName, setSellerLastName] = useState('')
+  const [ticketNumbers, setTicketNumbers] = useState<Record<string, string>>({})
   const queryClient = useQueryClient()
 
   const { data: event, isLoading } = useQuery<Event>({
@@ -54,6 +55,8 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
 
   const bookSeatsMutation = useMutation({
     mutationFn: async () => {
+      const ticketNumbersArray = selectedSeats.map(seatId => ticketNumbers[seatId] || '')
+      
       const res = await fetch('/api/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -64,6 +67,7 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
           customerLastName,
           sellerFirstName,
           sellerLastName,
+          ticketNumbers: ticketNumbersArray,
         }),
       })
       
@@ -81,6 +85,7 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
       setCustomerLastName('')
       setSellerFirstName('')
       setSellerLastName('')
+      setTicketNumbers({})
       notifications.show({
         title: 'Success!',
         message: 'Your seats have been booked successfully.',
@@ -99,11 +104,20 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
   const toggleSeat = (seatId: string, status: string) => {
     if (status !== 'AVAILABLE') return
 
-    setSelectedSeats(prev =>
-      prev.includes(seatId)
-        ? prev.filter(id => id !== seatId)
-        : [...prev, seatId]
-    )
+    setSelectedSeats(prev => {
+      const isSelected = prev.includes(seatId)
+      if (isSelected) {
+        // Remove ticket number when seat is deselected
+        setTicketNumbers(prevTickets => {
+          const newTickets = { ...prevTickets }
+          delete newTickets[seatId]
+          return newTickets
+        })
+        return prev.filter(id => id !== seatId)
+      } else {
+        return [...prev, seatId]
+      }
+    })
   }
 
   const getSeatColor = (seat: Seat) => {
@@ -112,6 +126,11 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
     if (seat.status === 'RESERVED') return 'yellow'
     return 'green'
   }
+
+  // Memoize the validation check to avoid unnecessary re-computation
+  const areAllTicketNumbersFilled = useMemo(() => {
+    return !selectedSeats.some(seatId => !ticketNumbers[seatId]?.trim())
+  }, [selectedSeats, ticketNumbers])
 
   if (isLoading) return <Container size="lg" py="xl"><Text>Loading...</Text></Container>
   if (!event) return <Container size="lg" py="xl"><Text>Event not found</Text></Container>
@@ -314,6 +333,32 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
                   />
                 </Group>
               </div>
+
+              <div>
+                <Title order={4} size="h5" mb="xs">Ticket Numbers</Title>
+                <Text size="sm" c="dimmed" mb="xs">
+                  Enter the existing ticket number for each selected seat
+                </Text>
+                <Stack gap="xs">
+                  {selectedSeats.map((seatId, index) => {
+                    const seat = event?.seats.find(s => s.id === seatId)
+                    const seatLabel = seat ? `${seat.section} ${seat.row}${seat.number}` : `Seat ${index + 1}`
+                    return (
+                      <TextInput
+                        key={seatId}
+                        label={seatLabel}
+                        placeholder="Enter ticket number"
+                        value={ticketNumbers[seatId] || ''}
+                        onChange={(e) => setTicketNumbers(prev => ({
+                          ...prev,
+                          [seatId]: e.target.value
+                        }))}
+                        required
+                      />
+                    )
+                  })}
+                </Stack>
+              </div>
             </Stack>
 
             <Group gap="md" mt="md">
@@ -323,14 +368,18 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
                   !customerFirstName || 
                   !customerLastName || 
                   !sellerFirstName || 
-                  !sellerLastName || 
+                  !sellerLastName ||
+                  !areAllTicketNumbersFilled ||
                   bookSeatsMutation.isPending
                 }
                 loading={bookSeatsMutation.isPending}
               >
                 Book {selectedSeats.length} Seat{selectedSeats.length > 1 ? 's' : ''}
               </Button>
-              <Button variant="light" onClick={() => setSelectedSeats([])}>
+              <Button variant="light" onClick={() => {
+                setSelectedSeats([])
+                setTicketNumbers({})
+              }}>
                 Clear Selection
               </Button>
             </Group>
