@@ -42,7 +42,7 @@ model Seat {
   status       String   @default("AVAILABLE")
   bookedBy     String?
   bookedAt     DateTime?
-  ticketNumber String?  // Unique ticket number for each booked seat
+  ticketNumber String?  @unique // Unique ticket number for each booked seat
   bookingId    String?
   booking      Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
   createdAt    DateTime @default(now())

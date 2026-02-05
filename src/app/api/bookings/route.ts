@@ -71,13 +71,17 @@ export async function POST(request: Request) {
         },
       })
 
+      // Create a map for O(1) lookups
+      const seatsMap = new Map(seats.map(s => [s.id, s]))
+      
       // Generate ticket numbers and update seats
       const updatedSeats = await Promise.all(
         seatIds.map(async (seatId, index) => {
-          const seat = seats.find(s => s.id === seatId)
+          const seat = seatsMap.get(seatId)
           if (!seat) throw new Error('Seat not found')
           
           // Generate ticket number: EVENT-BOOKING-SEAT format
+          // The booking ID ensures uniqueness across all bookings
           const ticketNumber = `${eventId.substring(0, 8).toUpperCase()}-${booking.id.substring(0, 8).toUpperCase()}-${(index + 1).toString().padStart(3, '0')}`
           
           return tx.seat.update({
