@@ -26,8 +26,7 @@ export async function PATCH(
   { params }: { params: Promise<{ eventId: string }> }
 ) {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { eventId } = await params
+    await params // Ensure params is awaited
     const body = await request.json()
     const { seatId, status, bookedBy } = body
 

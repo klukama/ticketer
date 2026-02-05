@@ -7,18 +7,18 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
 model Event {
   id          String   @id @default(cuid())
   title       String
-  description String?
+  description String?  @db.Text
   venue       String
   date        DateTime
   totalSeats  Int      @default(0)
-  imageUrl    String?
+  imageUrl    String?  @db.Text
   // Seating configuration
   leftRows    Int      @default(6)  // Number of rows in left section
   leftCols    Int      @default(5)  // Number of columns in left section
