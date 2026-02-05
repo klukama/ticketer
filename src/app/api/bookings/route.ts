@@ -10,7 +10,8 @@ export async function POST(request: Request) {
       customerFirstName, 
       customerLastName, 
       sellerFirstName, 
-      sellerLastName 
+      sellerLastName,
+      ticketNumbers 
     } = body
 
     // Validate input
@@ -32,6 +33,46 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: 'Missing required fields: customer and seller names are required' },
         { status: 400 }
+      )
+    }
+
+    if (!ticketNumbers || !Array.isArray(ticketNumbers) || ticketNumbers.length === 0) {
+      return NextResponse.json(
+        { error: 'Missing required field: ticketNumbers must be a non-empty array' },
+        { status: 400 }
+      )
+    }
+
+    if (ticketNumbers.length !== seatIds.length) {
+      return NextResponse.json(
+        { error: 'Number of ticket numbers must match number of seats' },
+        { status: 400 }
+      )
+    }
+
+    // Check for duplicate ticket numbers in the input
+    const duplicateTickets = ticketNumbers.filter((ticket: string, index: number) => 
+      ticketNumbers.indexOf(ticket) !== index
+    )
+    if (duplicateTickets.length > 0) {
+      return NextResponse.json(
+        { error: 'Duplicate ticket numbers are not allowed' },
+        { status: 400 }
+      )
+    }
+
+    // Check if any ticket numbers already exist in the database
+    const existingTickets = await prisma.seat.findMany({
+      where: {
+        ticketNumber: { in: ticketNumbers }
+      },
+      select: { ticketNumber: true }
+    })
+    
+    if (existingTickets.length > 0) {
+      return NextResponse.json(
+        { error: `Ticket number(s) already exist: ${existingTickets.map(t => t.ticketNumber).join(', ')}` },
+        { status: 409 }
       )
     }
 
@@ -74,15 +115,14 @@ export async function POST(request: Request) {
       // Create a map for O(1) lookups
       const seatsMap = new Map(seats.map(s => [s.id, s]))
       
-      // Generate ticket numbers and update seats
+      // Use user-provided ticket numbers and update seats
       const updatedSeats = await Promise.all(
         seatIds.map(async (seatId, index) => {
           const seat = seatsMap.get(seatId)
           if (!seat) throw new Error('Seat not found')
           
-          // Generate ticket number: EVENT-BOOKING-SEAT format
-          // The booking ID ensures uniqueness across all bookings
-          const ticketNumber = `${eventId.substring(0, 8).toUpperCase()}-${booking.id.substring(0, 8).toUpperCase()}-${(index + 1).toString().padStart(3, '0')}`
+          // Use the ticket number provided by the user
+          const ticketNumber = ticketNumbers[index]
           
           return tx.seat.update({
             where: { id: seatId },
