@@ -21,7 +21,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { title, description, venue, date, totalSeats, imageUrl, leftRows, leftCols, rightRows, rightCols } = body
+    const { title, description, venue, date, totalSeats, imageUrl, leftRows, leftCols, rightRows, rightCols, backRows, backCols } = body
 
     // Validate required fields
     if (!title || !venue || !date || !totalSeats) {
@@ -44,6 +44,8 @@ export async function POST(request: Request) {
     const leftColsCount = leftCols || 5
     const rightRowsCount = rightRows || 6
     const rightColsCount = rightCols || 5
+    const backRowsCount = backRows || 0
+    const backColsCount = backCols || 0
 
     const event = await prisma.event.create({
       data: {
@@ -57,6 +59,8 @@ export async function POST(request: Request) {
         leftCols: leftColsCount,
         rightRows: rightRowsCount,
         rightCols: rightColsCount,
+        backRows: backRowsCount,
+        backCols: backColsCount,
       },
     })
 
@@ -90,6 +94,20 @@ export async function POST(request: Request) {
           row,
           number: i,
           section: 'RIGHT',
+          status: 'AVAILABLE',
+        })
+      }
+    }
+
+    // Create back section seats
+    for (let rowIndex = 0; rowIndex < backRowsCount; rowIndex++) {
+      const row = getRowLabel(rowIndex)
+      for (let i = 1; i <= backColsCount; i++) {
+        seats.push({
+          eventId: event.id,
+          row,
+          number: i,
+          section: 'BACK',
           status: 'AVAILABLE',
         })
       }

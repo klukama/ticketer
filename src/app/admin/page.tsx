@@ -49,6 +49,8 @@ export default function AdminPage() {
     leftCols: 5,
     rightRows: 6,
     rightCols: 5,
+    backRows: 0,
+    backCols: 0,
   })
 
   const queryClient = useQueryClient()
@@ -174,6 +176,8 @@ export default function AdminPage() {
       leftCols: 5,
       rightRows: 6,
       rightCols: 5,
+      backRows: 0,
+      backCols: 0,
     })
   }
 
@@ -199,6 +203,8 @@ export default function AdminPage() {
       leftCols: (event as any).leftCols || 5,
       rightRows: (event as any).rightRows || 6,
       rightCols: (event as any).rightCols || 5,
+      backRows: (event as any).backRows || 0,
+      backCols: (event as any).backCols || 0,
     })
     setEditModalOpen(true)
   }
@@ -413,8 +419,26 @@ export default function AdminPage() {
               />
             </Group>
             
+            <Group grow>
+              <TextInput
+                label="Back Section - Rows"
+                type="number"
+                min={0}
+                max={26}
+                value={formData.backRows}
+                onChange={(e) => setFormData({ ...formData, backRows: Number(e.target.value) })}
+              />
+              <TextInput
+                label="Back Section - Columns"
+                type="number"
+                min={0}
+                value={formData.backCols}
+                onChange={(e) => setFormData({ ...formData, backCols: Number(e.target.value) })}
+              />
+            </Group>
+            
             <Text size="sm" c="dimmed">
-              The actual number of seats created will be: (Left Rows × Left Columns) + (Right Rows × Right Columns). The &quot;Total Seats&quot; field above is for display purposes and does not need to match exactly.
+              The actual number of seats created will be: (Left Rows × Left Columns) + (Right Rows × Right Columns) + (Back Rows × Back Columns). The &quot;Total Seats&quot; field above is for display purposes and does not need to match exactly.
             </Text>
             
             <Group justify="flex-end" gap="xs">

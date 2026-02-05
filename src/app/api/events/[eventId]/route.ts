@@ -37,7 +37,7 @@ export async function PATCH(
   try {
     const { eventId } = await params
     const body = await request.json()
-    const { title, description, venue, date, totalSeats, imageUrl, leftRows, leftCols, rightRows, rightCols } = body
+    const { title, description, venue, date, totalSeats, imageUrl, leftRows, leftCols, rightRows, rightCols, backRows, backCols } = body
 
     // Check if event exists
     const existingEvent = await prisma.event.findUnique({
@@ -81,6 +81,8 @@ export async function PATCH(
         ...(leftCols !== undefined && { leftCols }),
         ...(rightRows !== undefined && { rightRows }),
         ...(rightCols !== undefined && { rightCols }),
+        ...(backRows !== undefined && { backRows }),
+        ...(backCols !== undefined && { backCols }),
       }
     })
 
