@@ -4,9 +4,6 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
 
-# Install OpenSSL compatibility libraries for Prisma
-RUN apk add --no-cache openssl
-
 # Copy package files
 COPY package.json package-lock.json ./
 
@@ -16,9 +13,6 @@ RUN npm ci
 # Stage 2: Builder
 FROM node:20-alpine AS builder
 WORKDIR /app
-
-# Install OpenSSL compatibility libraries for Prisma
-RUN apk add --no-cache openssl
 
 # Copy dependencies from deps stage
 COPY --from=deps /app/node_modules ./node_modules
@@ -40,9 +34,6 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
-
-# Install OpenSSL compatibility libraries for Prisma
-RUN apk add --no-cache openssl
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
