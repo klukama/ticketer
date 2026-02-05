@@ -44,7 +44,7 @@ export async function POST(request: Request) {
     }
 
     // Validate that all ticket numbers are non-empty strings
-    const invalidTickets = ticketNumbers.filter(ticket => !ticket || !ticket.trim())
+    const invalidTickets = ticketNumbers.filter(ticket => typeof ticket !== 'string' || !ticket.trim())
     if (invalidTickets.length > 0) {
       return NextResponse.json(
         { error: 'All ticket numbers must be non-empty strings' },
@@ -61,21 +61,15 @@ export async function POST(request: Request) {
 
     // Check for duplicate ticket numbers in the input using a Set for O(n) complexity
     const ticketSet = new Set<string>()
-    const duplicates: string[] = []
     
     for (const ticket of ticketNumbers) {
       if (ticketSet.has(ticket)) {
-        duplicates.push(ticket)
-      } else {
-        ticketSet.add(ticket)
+        return NextResponse.json(
+          { error: `Duplicate ticket numbers are not allowed: ${ticket}` },
+          { status: 400 }
+        )
       }
-    }
-    
-    if (duplicates.length > 0) {
-      return NextResponse.json(
-        { error: `Duplicate ticket numbers are not allowed: ${duplicates.join(', ')}` },
-        { status: 400 }
-      )
+      ticketSet.add(ticket)
     }
 
     // Check if all seats are available
