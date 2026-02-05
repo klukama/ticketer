@@ -1,6 +1,24 @@
-version: '3.8'
-
 services:
+  mysql:
+    image: mysql:8.0
+    container_name: ticketer-mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=rootpassword
+      - MYSQL_DATABASE=ticketer
+      - MYSQL_USER=ticketer
+      - MYSQL_PASSWORD=ticketerpassword
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
   ticketer:
     build:
       context: .
@@ -10,10 +28,10 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=file:./prisma/dev.db
-    volumes:
-      # Mount the entire prisma directory to persist database and related files
-      - ./prisma:/app/prisma
+      - DATABASE_URL=mysql://ticketer:ticketerpassword@mysql:3306/ticketer
+    depends_on:
+      mysql:
+        condition: service_healthy
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:3000', (r) => process.exit(r.statusCode === 200 ? 0 : 1))\""]
@@ -21,3 +39,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+
+volumes:
+  mysql-data:
