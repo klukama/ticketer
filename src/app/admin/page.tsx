@@ -45,6 +45,10 @@ export default function AdminPage() {
     date: '',
     totalSeats: 30,
     imageUrl: '',
+    leftRows: 6,
+    leftCols: 5,
+    rightRows: 6,
+    rightCols: 5,
   })
 
   const queryClient = useQueryClient()
@@ -166,6 +170,10 @@ export default function AdminPage() {
       date: '',
       totalSeats: 30,
       imageUrl: '',
+      leftRows: 6,
+      leftCols: 5,
+      rightRows: 6,
+      rightCols: 5,
     })
   }
 
@@ -187,6 +195,10 @@ export default function AdminPage() {
       date: formattedDate,
       totalSeats: event.totalSeats,
       imageUrl: event.imageUrl || '',
+      leftRows: (event as any).leftRows || 6,
+      leftCols: (event as any).leftCols || 5,
+      rightRows: (event as any).rightRows || 6,
+      rightCols: (event as any).rightCols || 5,
     })
     setEditModalOpen(true)
   }
@@ -358,6 +370,52 @@ export default function AdminPage() {
               value={formData.imageUrl}
               onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
             />
+            
+            <Title order={4} size="h5" mt="md">Seating Configuration</Title>
+            
+            <Group grow>
+              <TextInput
+                label="Left Section - Rows"
+                type="number"
+                min={1}
+                max={26}
+                value={formData.leftRows}
+                onChange={(e) => setFormData({ ...formData, leftRows: Number(e.target.value) })}
+                required
+              />
+              <TextInput
+                label="Left Section - Columns"
+                type="number"
+                min={1}
+                value={formData.leftCols}
+                onChange={(e) => setFormData({ ...formData, leftCols: Number(e.target.value) })}
+                required
+              />
+            </Group>
+            
+            <Group grow>
+              <TextInput
+                label="Right Section - Rows"
+                type="number"
+                min={1}
+                max={26}
+                value={formData.rightRows}
+                onChange={(e) => setFormData({ ...formData, rightRows: Number(e.target.value) })}
+                required
+              />
+              <TextInput
+                label="Right Section - Columns"
+                type="number"
+                min={1}
+                value={formData.rightCols}
+                onChange={(e) => setFormData({ ...formData, rightCols: Number(e.target.value) })}
+                required
+              />
+            </Group>
+            
+            <Text size="sm" c="dimmed">
+              Total seats will be calculated as: (Left Rows × Left Columns) + (Right Rows × Right Columns)
+            </Text>
             
             <Group justify="flex-end" gap="xs">
               <Button

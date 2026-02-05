@@ -18,6 +18,10 @@ async function main() {
       date: new Date('2026-07-15T19:00:00'),
       totalSeats: 120,
       imageUrl: null,
+      leftRows: 6,
+      leftCols: 10,
+      rightRows: 6,
+      rightCols: 10,
     },
     {
       title: 'Comedy Night Special',
@@ -26,6 +30,10 @@ async function main() {
       date: new Date('2026-03-20T20:00:00'),
       totalSeats: 90,
       imageUrl: null,
+      leftRows: 5,
+      leftCols: 9,
+      rightRows: 5,
+      rightCols: 9,
     },
     {
       title: 'Classical Orchestra Performance',
@@ -34,6 +42,10 @@ async function main() {
       date: new Date('2026-04-10T18:30:00'),
       totalSeats: 150,
       imageUrl: null,
+      leftRows: 6,
+      leftCols: 12,
+      rightRows: 7,
+      rightCols: 13,
     },
   ]
 
@@ -46,15 +58,31 @@ async function main() {
 
     // Create seats for the event
     const seats = []
-    const rows = ['A', 'B', 'C', 'D', 'E', 'F']
-    const seatsPerRow = Math.ceil(eventData.totalSeats / rows.length)
+    const getRowLabel = (index: number) => String.fromCharCode(65 + index) // 65 is 'A'
 
-    for (const row of rows) {
-      for (let i = 1; i <= seatsPerRow; i++) {
+    // Create left section seats
+    for (let rowIndex = 0; rowIndex < eventData.leftRows; rowIndex++) {
+      const row = getRowLabel(rowIndex)
+      for (let i = 1; i <= eventData.leftCols; i++) {
         seats.push({
           eventId: event.id,
           row,
           number: i,
+          section: 'LEFT',
+          status: 'AVAILABLE',
+        })
+      }
+    }
+
+    // Create right section seats
+    for (let rowIndex = 0; rowIndex < eventData.rightRows; rowIndex++) {
+      const row = getRowLabel(rowIndex)
+      for (let i = 1; i <= eventData.rightCols; i++) {
+        seats.push({
+          eventId: event.id,
+          row,
+          number: i,
+          section: 'RIGHT',
           status: 'AVAILABLE',
         })
       }
