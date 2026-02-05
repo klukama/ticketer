@@ -3,7 +3,7 @@
 import { Container, Title, Text, Badge, Button, Group, Stack, Paper, TextInput } from '@mantine/core'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { notifications } from '@mantine/notifications'
-import { use, useState } from 'react'
+import { use, useState, useMemo } from 'react'
 import Link from 'next/link'
 
 interface Seat {
@@ -126,6 +126,11 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
     if (seat.status === 'RESERVED') return 'yellow'
     return 'green'
   }
+
+  // Memoize the validation check to avoid unnecessary re-computation
+  const areAllTicketNumbersFilled = useMemo(() => {
+    return !selectedSeats.some(seatId => !ticketNumbers[seatId]?.trim())
+  }, [selectedSeats, ticketNumbers])
 
   if (isLoading) return <Container size="lg" py="xl"><Text>Loading...</Text></Container>
   if (!event) return <Container size="lg" py="xl"><Text>Event not found</Text></Container>
@@ -364,7 +369,7 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
                   !customerLastName || 
                   !sellerFirstName || 
                   !sellerLastName ||
-                  selectedSeats.some(seatId => !ticketNumbers[seatId]?.trim()) ||
+                  !areAllTicketNumbersFilled ||
                   bookSeatsMutation.isPending
                 }
                 loading={bookSeatsMutation.isPending}

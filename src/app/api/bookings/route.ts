@@ -44,7 +44,7 @@ export async function POST(request: Request) {
     }
 
     // Validate that all ticket numbers are non-empty strings
-    const invalidTickets = ticketNumbers.filter((ticket: string) => !ticket || !ticket.trim())
+    const invalidTickets = ticketNumbers.filter(ticket => !ticket || !ticket.trim())
     if (invalidTickets.length > 0) {
       return NextResponse.json(
         { error: 'All ticket numbers must be non-empty strings' },
@@ -78,21 +78,6 @@ export async function POST(request: Request) {
       )
     }
 
-    // Check if any ticket numbers already exist in the database
-    const existingTickets = await prisma.seat.findMany({
-      where: {
-        ticketNumber: { in: ticketNumbers }
-      },
-      select: { ticketNumber: true }
-    })
-    
-    if (existingTickets.length > 0) {
-      return NextResponse.json(
-        { error: `Ticket number(s) already exist: ${existingTickets.map(t => t.ticketNumber).join(', ')}` },
-        { status: 409 }
-      )
-    }
-
     // Check if all seats are available
     const seats = await prisma.seat.findMany({
       where: {
@@ -112,6 +97,21 @@ export async function POST(request: Request) {
     if (unavailableSeats.length > 0) {
       return NextResponse.json(
         { error: 'Some seats are no longer available' },
+        { status: 409 }
+      )
+    }
+
+    // Check if any ticket numbers already exist in the database
+    const existingTickets = await prisma.seat.findMany({
+      where: {
+        ticketNumber: { in: ticketNumbers }
+      },
+      select: { ticketNumber: true }
+    })
+    
+    if (existingTickets.length > 0) {
+      return NextResponse.json(
+        { error: `Ticket number(s) already exist: ${existingTickets.map(t => t.ticketNumber).join(', ')}` },
         { status: 409 }
       )
     }
