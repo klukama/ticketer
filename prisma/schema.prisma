@@ -7,43 +7,63 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
 model Event {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   title       String
-  description String?  @db.Text
+  description String?
   venue       String
   date        DateTime
-  totalSeats  Int      @default(0)
-  imageUrl    String?  @db.Text
+  totalSeats  Int       @default(0)
+  imageUrl    String?
   // Seating configuration
-  leftRows    Int      @default(6)  // Number of rows in left section
-  leftCols    Int      @default(5)  // Number of columns in left section
-  rightRows   Int      @default(6)  // Number of rows in right section
-  rightCols   Int      @default(5)  // Number of columns in right section
-  backRows    Int      @default(0)  // Number of rows in back section
-  backCols    Int      @default(0)  // Number of columns in back section
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  leftRows    Int       @default(6)  // Number of rows in left section
+  leftCols    Int       @default(5)  // Number of columns in left section
+  rightRows   Int       @default(6)  // Number of rows in right section
+  rightCols   Int       @default(5)  // Number of columns in right section
+  backRows    Int       @default(0)  // Number of rows in back section
+  backCols    Int       @default(0)  // Number of columns in back section
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   seats       Seat[]
+  bookings    Booking[]
 }
 
 model Seat {
-  id        String   @id @default(cuid())
-  eventId   String
-  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  row       String
-  number    Int
-  section   String   @default("LEFT")  // LEFT, RIGHT, or BACK
-  status    String   @default("AVAILABLE")
-  bookedBy  String?
-  bookedAt  DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String   @id @default(cuid())
+  eventId      String
+  event        Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  row          String
+  number       Int
+  section      String   @default("LEFT")  // LEFT, RIGHT, or BACK
+  status       String   @default("AVAILABLE")
+  bookedBy     String?
+  bookedAt     DateTime?
+  ticketNumber String?  // Unique ticket number for each booked seat
+  bookingId    String?
+  booking      Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@unique([eventId, section, row, number])
+  @@index([eventId])
+  @@index([bookingId])
+}
+
+model Booking {
+  id                String   @id @default(cuid())
+  eventId           String
+  event             Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  customerFirstName String
+  customerLastName  String
+  sellerFirstName   String
+  sellerLastName    String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  seats             Seat[]
+
   @@index([eventId])
 }

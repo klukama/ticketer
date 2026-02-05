@@ -36,7 +36,10 @@ interface Event {
 export default function EventPage({ params }: { params: Promise<{ eventId: string }> }) {
   const { eventId } = use(params)
   const [selectedSeats, setSelectedSeats] = useState<string[]>([])
-  const [customerName, setCustomerName] = useState('')
+  const [customerFirstName, setCustomerFirstName] = useState('')
+  const [customerLastName, setCustomerLastName] = useState('')
+  const [sellerFirstName, setSellerFirstName] = useState('')
+  const [sellerLastName, setSellerLastName] = useState('')
   const queryClient = useQueryClient()
 
   const { data: event, isLoading } = useQuery<Event>({
@@ -51,33 +54,43 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
 
   const bookSeatsMutation = useMutation({
     mutationFn: async () => {
-      const promises = selectedSeats.map(seatId =>
-        fetch(`/api/events/${eventId}/seats`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            seatId,
-            status: 'BOOKED',
-            bookedBy: customerName,
-          }),
-        })
-      )
-      await Promise.all(promises)
+      const res = await fetch('/api/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          eventId,
+          seatIds: selectedSeats,
+          customerFirstName,
+          customerLastName,
+          sellerFirstName,
+          sellerLastName,
+        }),
+      })
+      
+      if (!res.ok) {
+        const error = await res.json()
+        throw new Error(error.error || 'Failed to book seats')
+      }
+      
+      return res.json()
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['event', eventId] })
       setSelectedSeats([])
-      setCustomerName('')
+      setCustomerFirstName('')
+      setCustomerLastName('')
+      setSellerFirstName('')
+      setSellerLastName('')
       notifications.show({
         title: 'Success!',
         message: 'Your seats have been booked successfully.',
         color: 'green',
       })
     },
-    onError: () => {
+    onError: (error: Error) => {
       notifications.show({
         title: 'Error',
-        message: 'Failed to book seats. Please try again.',
+        message: error.message || 'Failed to book seats. Please try again.',
         color: 'red',
       })
     },
@@ -261,19 +274,58 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
             <Title order={3} size="h4" mb="md">Complete Booking</Title>
             <Text mb="md">Selected seats: {selectedSeats.length}</Text>
             
-            <TextInput
-              label="Your name"
-              placeholder="Enter your name"
-              value={customerName}
-              onChange={(e) => setCustomerName(e.target.value)}
-              mb="md"
-              required
-            />
+            <Stack gap="md">
+              <div>
+                <Title order={4} size="h5" mb="xs">Customer Information</Title>
+                <Group grow>
+                  <TextInput
+                    label="First Name"
+                    placeholder="Enter customer first name"
+                    value={customerFirstName}
+                    onChange={(e) => setCustomerFirstName(e.target.value)}
+                    required
+                  />
+                  <TextInput
+                    label="Last Name"
+                    placeholder="Enter customer last name"
+                    value={customerLastName}
+                    onChange={(e) => setCustomerLastName(e.target.value)}
+                    required
+                  />
+                </Group>
+              </div>
 
-            <Group gap="md">
+              <div>
+                <Title order={4} size="h5" mb="xs">Seller Information</Title>
+                <Group grow>
+                  <TextInput
+                    label="First Name"
+                    placeholder="Enter seller first name"
+                    value={sellerFirstName}
+                    onChange={(e) => setSellerFirstName(e.target.value)}
+                    required
+                  />
+                  <TextInput
+                    label="Last Name"
+                    placeholder="Enter seller last name"
+                    value={sellerLastName}
+                    onChange={(e) => setSellerLastName(e.target.value)}
+                    required
+                  />
+                </Group>
+              </div>
+            </Stack>
+
+            <Group gap="md" mt="md">
               <Button
                 onClick={() => bookSeatsMutation.mutate()}
-                disabled={!customerName || bookSeatsMutation.isPending}
+                disabled={
+                  !customerFirstName || 
+                  !customerLastName || 
+                  !sellerFirstName || 
+                  !sellerLastName || 
+                  bookSeatsMutation.isPending
+                }
                 loading={bookSeatsMutation.isPending}
               >
                 Book {selectedSeats.length} Seat{selectedSeats.length > 1 ? 's' : ''}
