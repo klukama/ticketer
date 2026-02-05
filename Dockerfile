@@ -57,7 +57,7 @@ COPY --from=builder /app/node_modules/.bin ./node_modules/.bin
 COPY --from=builder /app/package.json ./package.json
 
 # Copy entrypoint script
-COPY --from=builder /app/docker-entrypoint.sh /docker-entrypoint.sh
+COPY docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
 
 RUN chown -R nextjs:nodejs /app
