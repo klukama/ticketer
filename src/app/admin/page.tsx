@@ -414,7 +414,7 @@ export default function AdminPage() {
             </Group>
             
             <Text size="sm" c="dimmed">
-              Total seats will be calculated as: (Left Rows × Left Columns) + (Right Rows × Right Columns)
+              The actual number of seats created will be: (Left Rows × Left Columns) + (Right Rows × Right Columns). The &quot;Total Seats&quot; field above is for display purposes and does not need to match exactly.
             </Text>
             
             <Group justify="flex-end" gap="xs">

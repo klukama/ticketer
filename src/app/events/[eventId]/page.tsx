@@ -196,7 +196,6 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
           <Paper 
             mt="lg" 
             p="md" 
-            bg="gray.3" 
             ta="center"
             style={{ 
               backgroundColor: '#adb5bd',
