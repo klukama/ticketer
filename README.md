@@ -14,6 +14,7 @@ A modern event ticketing and seat selection system built with Next.js, React, Ma
 - Real-time seat selection with live updates
 - Interactive seat map visualization
 - Seat booking system
+- **Admin panel** for event management
 - Responsive design with Mantine UI
 
 ## Getting Started
@@ -71,6 +72,17 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+### Admin Panel
+
+Access the admin panel at [http://localhost:3000/admin](http://localhost:3000/admin) to:
+- Create new events
+- Edit existing events
+- Delete events
+- View bookings for each event
+- Track seat availability
+
+The admin panel is accessible via the "Admin Panel" button on the home page or by navigating directly to `/admin`.
 
 ### Building for Production
 
@@ -139,8 +151,45 @@ NEXT_TELEMETRY_DISABLED=1
 - `GET /api/events` - List all events
 - `POST /api/events` - Create a new event
 - `GET /api/events/[eventId]` - Get event details with seats
+- `PATCH /api/events/[eventId]` - Update event details
+- `DELETE /api/events/[eventId]` - Delete an event
 - `GET /api/events/[eventId]/seats` - Get seats for an event
 - `PATCH /api/events/[eventId]/seats` - Update seat status (book/reserve)
+
+## Troubleshooting
+
+### Getting a 404 Error on /admin
+
+If you're getting a 404 error when trying to access the admin panel:
+
+1. **Make sure the development server is running:**
+   ```bash
+   npm run dev
+   ```
+
+2. **Verify the database is set up:**
+   ```bash
+   npm run db:push
+   npm run db:generate
+   npm run db:seed
+   ```
+
+3. **Clear Next.js cache and rebuild:**
+   ```bash
+   rm -rf .next
+   npm run build
+   npm run dev
+   ```
+
+4. **Check that you're using the correct URL:**
+   - The admin panel is at: `http://localhost:3000/admin`
+   - Not: `http://localhost:3000/admin/` (trailing slash might cause issues in some setups)
+
+### Other Common Issues
+
+- **Port already in use:** If port 3000 is already in use, Next.js will suggest an alternative port. Use that port instead.
+- **Database connection errors:** Ensure your `DATABASE_URL` in `.env` is correct and the database is accessible.
+- **Missing dependencies:** Run `npm install` to ensure all dependencies are installed.
 
 ## License
 
