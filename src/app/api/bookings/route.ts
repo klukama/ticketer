@@ -43,6 +43,15 @@ export async function POST(request: Request) {
       )
     }
 
+    // Validate that all ticket numbers are non-empty strings
+    const invalidTickets = ticketNumbers.filter((ticket: string) => !ticket || !ticket.trim())
+    if (invalidTickets.length > 0) {
+      return NextResponse.json(
+        { error: 'All ticket numbers must be non-empty strings' },
+        { status: 400 }
+      )
+    }
+
     if (ticketNumbers.length !== seatIds.length) {
       return NextResponse.json(
         { error: 'Number of ticket numbers must match number of seats' },
@@ -50,13 +59,21 @@ export async function POST(request: Request) {
       )
     }
 
-    // Check for duplicate ticket numbers in the input
-    const duplicateTickets = ticketNumbers.filter((ticket: string, index: number) => 
-      ticketNumbers.indexOf(ticket) !== index
-    )
-    if (duplicateTickets.length > 0) {
+    // Check for duplicate ticket numbers in the input using a Set for O(n) complexity
+    const ticketSet = new Set<string>()
+    const duplicates: string[] = []
+    
+    for (const ticket of ticketNumbers) {
+      if (ticketSet.has(ticket)) {
+        duplicates.push(ticket)
+      } else {
+        ticketSet.add(ticket)
+      }
+    }
+    
+    if (duplicates.length > 0) {
       return NextResponse.json(
-        { error: 'Duplicate ticket numbers are not allowed' },
+        { error: `Duplicate ticket numbers are not allowed: ${duplicates.join(', ')}` },
         { status: 400 }
       )
     }
