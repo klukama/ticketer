@@ -19,17 +19,23 @@ A modern event ticketing and seat selection system built with Next.js, React, Ma
 
 ## Production Deployment
 
-Choose your deployment method:
+For complete deployment guides, see **[DEPLOYMENT.md](./DEPLOYMENT.md)** which provides:
 
-- **Kubernetes**: See the [Kubernetes Deployment Guide](./KUBERNETES_DEPLOYMENT.md) for deploying with Kubernetes
-- **Infomaniak Public Cloud**: See the [Infomaniak Deployment Guide](./INFOMANIAK_DEPLOYMENT.md) for direct deployment to Infomaniak Public Cloud with a managed MySQL database
-- **Docker**: Use the included `Dockerfile` and `docker-compose.yml` for containerized deployment
+- **Deployment Options Comparison**: Choose between Kubernetes, Docker, or Docker Compose
+- **Quick Links**: Jump to specific deployment guides
+- **Architecture Overview**: Understand the components
+- **Best Practices**: Production deployment recommendations
+
+**Quick Links to Specific Guides:**
+- [Kubernetes Deployment Guide](./KUBERNETES_DEPLOYMENT.md) - Deploy with Kubernetes (recommended for production)
+- [Infomaniak Deployment Guide](./INFOMANIAK_DEPLOYMENT.md) - Deploy to Infomaniak Public Cloud with managed MySQL
+- [Deployment Checklist](./DEPLOYMENT_CHECKLIST.md) - Verify your deployment is production-ready
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js 18+ installed
+- Node.js 20+ installed
 - MySQL database (for production) or SQLite (for local development)
 - Docker and Docker Compose (for containerized deployment)
 
