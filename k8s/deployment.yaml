@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ticketer
+  namespace: ticketer
+  labels:
+    app: ticketer
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ticketer
+  template:
+    metadata:
+      labels:
+        app: ticketer
+    spec:
+      containers:
+      - name: ticketer
+        image: ticketer:latest  # Update with your image registry URL
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3000
+          name: http
+          protocol: TCP
+        env:
+        - name: NODE_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: ticketer-config
+              key: NODE_ENV
+        - name: NEXT_TELEMETRY_DISABLED
+          valueFrom:
+            configMapKeyRef:
+              name: ticketer-config
+              key: NEXT_TELEMETRY_DISABLED
+        - name: PORT
+          valueFrom:
+            configMapKeyRef:
+              name: ticketer-config
+              key: PORT
+        - name: HOSTNAME
+          valueFrom:
+            configMapKeyRef:
+              name: ticketer-config
+              key: HOSTNAME
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: ticketer-secret
+              key: DATABASE_URL
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: 3000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 2
+      restartPolicy: Always
+      # Uncomment if using a private registry
+      # imagePullSecrets:
+      # - name: regcred

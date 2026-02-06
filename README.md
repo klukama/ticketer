@@ -19,7 +19,11 @@ A modern event ticketing and seat selection system built with Next.js, React, Ma
 
 ## Production Deployment
 
-For deploying to Infomaniak Public Cloud with a managed MySQL database, see the [Infomaniak Deployment Guide](./INFOMANIAK_DEPLOYMENT.md).
+Choose your deployment method:
+
+- **Kubernetes**: See the [Kubernetes Deployment Guide](./KUBERNETES_DEPLOYMENT.md) for deploying with Kubernetes
+- **Infomaniak Public Cloud**: See the [Infomaniak Deployment Guide](./INFOMANIAK_DEPLOYMENT.md) for direct deployment to Infomaniak Public Cloud with a managed MySQL database
+- **Docker**: Use the included `Dockerfile` and `docker-compose.yml` for containerized deployment
 
 ## Getting Started
 
