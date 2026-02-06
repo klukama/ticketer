@@ -1,0 +1,45 @@
+# Systemd service file for Ticketer application
+# For Infomaniak Public Cloud deployment
+#
+# Installation instructions:
+# 1. Copy this file to /etc/systemd/system/ticketer.service
+# 2. Update the paths and user in this file to match your setup
+# 3. Reload systemd: sudo systemctl daemon-reload
+# 4. Enable the service: sudo systemctl enable ticketer
+# 5. Start the service: sudo systemctl start ticketer
+# 6. Check status: sudo systemctl status ticketer
+
+[Unit]
+Description=Ticketer - Event Seating System
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/ticketer
+Environment="NODE_ENV=production"
+Environment="PORT=3000"
+
+# Load environment variables from .env file
+EnvironmentFile=/var/www/ticketer/.env
+
+# Use the production startup script
+ExecStart=/usr/bin/npm start
+
+# Restart policy
+Restart=on-failure
+RestartSec=10s
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ticketer
+
+[Install]
+WantedBy=multi-user.target

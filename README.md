@@ -17,6 +17,10 @@ A modern event ticketing and seat selection system built with Next.js, React, Ma
 - **Admin panel** for event management
 - Responsive design with Mantine UI
 
+## Production Deployment
+
+For deploying to Infomaniak Public Cloud with a managed MySQL database, see the [Infomaniak Deployment Guide](./INFOMANIAK_DEPLOYMENT.md).
+
 ## Getting Started
 
 ### Prerequisites
