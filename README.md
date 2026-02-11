@@ -21,9 +21,16 @@ A modern event ticketing and seat selection system built with Next.js, React, Ma
 
 ### Prerequisites
 
-- Node.js 18+ installed
+- Node.js 18+ installed (Node.js 25.6.0 for Jelastic Cloud deployment)
 - MySQL database (for production) or SQLite (for local development)
 - Docker and Docker Compose (for containerized deployment)
+
+### Deployment Options
+
+This application can be deployed in multiple ways:
+- **Local Development**: Using SQLite or MySQL
+- **Docker**: Using Docker Compose with MySQL 8.0
+- **Jelastic Cloud**: Infomaniak Jelastic with nginx 1.28.0, Node.js 25.6.0, and MySQL 9.6.0 - [See Jelastic Deployment Guide](JELASTIC_DEPLOYMENT.md)
 
 ### Local Development Setup
 
@@ -181,6 +188,23 @@ The database connection is configured in `docker-compose.yml`:
 DATABASE_URL="mysql://ticketer:ticketerpassword@mysql:3306/ticketer"
 NEXT_TELEMETRY_DISABLED=1
 ```
+
+## Jelastic Cloud Deployment
+
+The application is fully compatible with Infomaniak Jelastic Cloud. For detailed deployment instructions with:
+- **nginx 1.28.0** load balancer
+- **Node.js 25.6.0** application server  
+- **MySQL 9.6.0** database
+
+**See the comprehensive deployment guide**: [JELASTIC_DEPLOYMENT.md](JELASTIC_DEPLOYMENT.md)
+
+Quick start for Jelastic:
+1. Create environment in Jelastic with nginx, Node.js 25.6.0, and MySQL 9.6.0
+2. Configure database and note connection details
+3. Deploy application code via Git or archive upload
+4. Run setup script: `bash jelastic-setup.sh`
+5. Configure nginx with `nginx.conf` from this repository
+6. Access your application!
 
 ## Project Structure
 

@@ -1,6 +1,9 @@
 services:
   mysql:
+    # MySQL 8.0 for local development
+    # For production on Jelastic, MySQL 9.6.0 is used (managed separately)
     image: mysql:8.0
+    # To test with MySQL 9.x locally, use: mysql:9.0
     container_name: ticketer-mysql
     environment:
       - MYSQL_ROOT_PASSWORD=rootpassword
