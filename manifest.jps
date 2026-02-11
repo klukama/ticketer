@@ -1,0 +1,126 @@
+{
+  "jpsType": "install",
+  "jpsVersion": "1.8",
+  "id": "ticketer-app",
+  "name": "Ticketer - Event Seating System",
+  "version": "1.0.0",
+  "homepage": "https://github.com/klukama/ticketer",
+  "description": "A modern event ticketing and seat selection system built with Next.js, React, Mantine UI, and Prisma",
+  "logo": "https://raw.githubusercontent.com/klukama/ticketer/main/public/logo.png",
+  "categories": [
+    "apps/dev-and-admin-tools",
+    "apps/popular",
+    "apps/sales-and-marketing"
+  ],
+  "settings": {
+    "fields": [
+      {
+        "type": "string",
+        "name": "dbUser",
+        "caption": "Database User",
+        "default": "ticketer",
+        "required": true
+      },
+      {
+        "type": "string",
+        "name": "dbPassword",
+        "caption": "Database Password",
+        "inputType": "password",
+        "default": "",
+        "required": true,
+        "regex": "^[\\w-.]{8,}$",
+        "regexText": "Password must be at least 8 characters"
+      },
+      {
+        "type": "string",
+        "name": "dbName",
+        "caption": "Database Name",
+        "default": "ticketer",
+        "required": true
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "nodeType": "nginx",
+      "cloudlets": 8,
+      "nodeGroup": "bl",
+      "displayName": "Load Balancer",
+      "extip": true,
+      "count": 1
+    },
+    {
+      "nodeType": "nodejs25",
+      "cloudlets": 16,
+      "nodeGroup": "cp",
+      "displayName": "Application Server",
+      "count": 1,
+      "env": {
+        "NODE_ENV": "production",
+        "NEXT_TELEMETRY_DISABLED": "1",
+        "PORT": "3000",
+        "HOSTNAME": "0.0.0.0"
+      }
+    },
+    {
+      "nodeType": "mysql8",
+      "cloudlets": 16,
+      "nodeGroup": "sqldb",
+      "displayName": "Database",
+      "count": 1
+    }
+  ],
+  "onInstall": [
+    {
+      "createDatabase": {
+        "nodeGroup": "sqldb",
+        "name": "${settings.dbName}"
+      }
+    },
+    {
+      "cmd [sqldb]": [
+        "mysql -u root -p${nodes.sqldb.password} -e \"CREATE USER IF NOT EXISTS '${settings.dbUser}'@'%' IDENTIFIED BY '${settings.dbPassword}';\"",
+        "mysql -u root -p${nodes.sqldb.password} -e \"GRANT ALL PRIVILEGES ON ${settings.dbName}.* TO '${settings.dbUser}'@'%';\"",
+        "mysql -u root -p${nodes.sqldb.password} -e \"FLUSH PRIVILEGES;\""
+      ]
+    },
+    {
+      "deploy": {
+        "archive": "https://github.com/klukama/ticketer/archive/refs/heads/main.zip",
+        "name": "ticketer-main.zip",
+        "context": "ROOT",
+        "nodeGroup": "cp"
+      }
+    },
+    {
+      "cmd [cp]": [
+        "cd $HOME/ROOT",
+        "export DATABASE_URL=\"mysql://${settings.dbUser}:${settings.dbPassword}@${nodes.sqldb.intIP}:3306/${settings.dbName}\"",
+        "echo \"DATABASE_URL=$DATABASE_URL\" > .env",
+        "echo \"NODE_ENV=production\" >> .env",
+        "echo \"NEXT_TELEMETRY_DISABLED=1\" >> .env",
+        "echo \"PORT=3000\" >> .env",
+        "echo \"HOSTNAME=0.0.0.0\" >> .env",
+        "npm ci",
+        "npm run db:generate",
+        "npm run db:push",
+        "npm run db:seed || true",
+        "npm run build"
+      ]
+    },
+    {
+      "restartNodes": {
+        "nodeGroup": "cp"
+      }
+    },
+    {
+      "cmd [bl]": [
+        "cat > /etc/nginx/conf.d/ticketer.conf << 'NGINXEOF'\nupstream nodejs_backend {\n    server ${nodes.cp.intIP}:3000 max_fails=3 fail_timeout=30s;\n    keepalive 32;\n}\n\nserver {\n    listen 80;\n    server_name _;\n\n    client_max_body_size 10M;\n    keepalive_timeout 65;\n\n    location / {\n        proxy_pass http://nodejs_backend;\n        proxy_http_version 1.1;\n        proxy_set_header Upgrade $http_upgrade;\n        proxy_set_header Connection 'upgrade';\n        proxy_set_header Host $host;\n        proxy_set_header X-Real-IP $remote_addr;\n        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\n        proxy_set_header X-Forwarded-Proto $scheme;\n        proxy_cache_bypass $http_upgrade;\n        proxy_connect_timeout 60s;\n        proxy_send_timeout 60s;\n        proxy_read_timeout 60s;\n    }\n\n    location /_next/static/ {\n        proxy_pass http://nodejs_backend;\n        proxy_http_version 1.1;\n        proxy_cache_valid 200 365d;\n        add_header Cache-Control \"public, immutable\";\n    }\n\n    location /api/health {\n        proxy_pass http://nodejs_backend;\n        access_log off;\n    }\n}\nNGINXEOF",
+        "nginx -t && nginx -s reload"
+      ]
+    }
+  ],
+  "success": {
+    "text": "**Ticketer Application Installed Successfully!**\n\nYour application is now running and accessible at:\n- **URL**: ${env.url}\n- **Admin Panel**: ${env.url}/admin\n- **API Health**: ${env.url}/api/health\n\n**Database Configuration:**\n- Host: ${nodes.sqldb.intIP}\n- Database: ${settings.dbName}\n- User: ${settings.dbUser}\n\n**Next Steps:**\n1. Access the application at ${env.url}\n2. Configure SSL/TLS for production use\n3. Set up automated backups for the database\n4. Monitor application health at ${env.url}/api/health\n\nFor detailed documentation, see: https://github.com/klukama/ticketer"
+  }
+}
