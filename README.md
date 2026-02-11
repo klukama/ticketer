@@ -223,6 +223,7 @@ Quick start for Jelastic:
 
 ## API Endpoints
 
+### Events
 - `GET /api/events` - List all events
 - `POST /api/events` - Create a new event
 - `GET /api/events/[eventId]` - Get event details with seats
@@ -230,6 +231,9 @@ Quick start for Jelastic:
 - `DELETE /api/events/[eventId]` - Delete an event
 - `GET /api/events/[eventId]/seats` - Get seats for an event
 - `PATCH /api/events/[eventId]/seats` - Update seat status (book/reserve)
+
+### Health & Monitoring
+- `GET /api/health` - Health check endpoint (returns application status and database connectivity)
 
 ## Troubleshooting
 
