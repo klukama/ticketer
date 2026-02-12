@@ -2,280 +2,146 @@
 
 A modern event ticketing and seat selection system built with Next.js, React, Mantine UI, TanStack Query, and Prisma.
 
-## Tech Stack
-
-- **Frontend**: React with Mantine UI for components and TanStack Query for state management
-- **Backend**: Next.js API Routes
-- **Database**: MySQL via Prisma ORM
-
 ## Features
 
 - Browse upcoming events
 - Real-time seat selection with live updates
 - Interactive seat map visualization
 - Seat booking system
-- **Admin panel** for event management
-- Responsive design with Mantine UI
+- Admin panel for event management
+- Responsive design
 
-## Getting Started
+## Tech Stack
 
-### Prerequisites
+- **Frontend**: React 19, Mantine UI, TanStack Query
+- **Backend**: Next.js 16 API Routes
+- **Database**: MySQL via Prisma ORM
+- **Deployment**: Docker, Jelastic Cloud
 
-- Node.js 18+ installed (Node.js 22.x LTS recommended for production)
-- MySQL database (for production) or SQLite (for local development)
-- Docker and Docker Compose (for containerized deployment)
+## Quick Start
 
-### Deployment Options
+### Local Development (SQLite)
 
-This application can be deployed in multiple ways:
-- **Local Development**: Using SQLite or MySQL
-- **Docker**: Using Docker Compose with MySQL
-- **Jelastic Cloud (One-Click)**: Deploy instantly using the JPS manifest - [See One-Click Guide](MANIFEST_README.md) 
-- **Jelastic Cloud (3-Node Setup)**: Step-by-step manual deployment - [See 3-Node Setup Guide](JELASTIC_3NODE_SETUP.md)
-- **Jelastic Cloud (Detailed)**: Complete deployment guide - [See Full Deployment Guide](JELASTIC_DEPLOYMENT.md)
-
-#### Quick Deploy to Jelastic/Virtuozzo
-
-[![Deploy to Jelastic](https://img.shields.io/badge/Deploy%20to-Jelastic-blue?logo=jelastic)](https://jelastic.com/install-application/?jps=https://raw.githubusercontent.com/YOUR_USERNAME/ticketer/main/manifest.jps)
-
-One-click deployment to any Virtuozzo/Jelastic PaaS platform with:
-- Nginx 1.28.x Load Balancer
-- Node.js 22.x LTS Application Server  
-- MySQL 9.x Database
-
-**[→ Start with the 3-Node Setup Guide](JELASTIC_3NODE_SETUP.md)** for manual deployment.
-
-
-### Local Development Setup
-
-#### Option 1: Using SQLite (Simpler for Development)
-
-1. Install dependencies:
 ```bash
 npm install
-```
-
-2. Update `prisma/schema.prisma` to use SQLite:
-```prisma
-datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
-}
-```
-
-3. Create a `.env` file:
-```env
-DATABASE_URL="file:./dev.db"
-```
-
-4. Push the database schema:
-```bash
-npm run db:push
-```
-
-5. Generate Prisma Client:
-```bash
 npm run db:generate
-```
-
-6. Seed the database:
-```bash
+npm run db:push
 npm run db:seed
+npm run dev
 ```
 
-#### Option 2: Using MySQL (Production-like)
+Open http://localhost:3000
 
-1. Install dependencies:
-```bash
-npm install
-```
+### Local Development (MySQL)
 
-2. Set up your database connection in `.env`:
+Create `.env`:
 ```env
 DATABASE_URL="mysql://user:password@localhost:3306/ticketer"
 ```
 
-Note: `prisma/schema.prisma` is already configured for MySQL.
-
-3. Push the database schema:
 ```bash
-npm run db:push
-```
-
-4. Generate Prisma Client:
-```bash
+npm install
 npm run db:generate
-```
-
-5. Seed the database:
-```bash
+npm run db:push
 npm run db:seed
-```
-
-### Development
-
-Run the development server:
-```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
-
-### Admin Panel
-
-Access the admin panel at [http://localhost:3000/admin](http://localhost:3000/admin) to:
-- Create new events
-- Edit existing events
-- Delete events
-- View bookings for each event
-- Track seat availability
-
-The admin panel is accessible via the "Admin Panel" button on the home page or by navigating directly to `/admin`.
-
-### Building for Production
+### Docker Deployment
 
 ```bash
-npm run build
-npm start
+docker compose up
 ```
 
-## Docker Deployment
+Access at http://localhost:3000
 
-The application is fully containerized and can be run using Docker with MySQL.
+### Jelastic Cloud Deployment
 
-### Using Docker Compose (Recommended)
+**One-Click:** Import `manifest.jps` in Jelastic dashboard
 
-The easiest way to run the application with MySQL:
+**Manual:** See deployment instructions below
+
+## Deployment Options
+
+### Docker Compose
 
 ```bash
-# Build and start all containers (MySQL + App)
 docker compose up -d
-
-# View logs
-docker compose logs -f
-
-# View logs for specific service
-docker compose logs -f ticketer
-docker compose logs -f mysql
-
-# Stop and remove all containers
-docker compose down
-
-# Stop and remove all containers including volumes (this will delete the database)
-docker compose down -v
 ```
 
-The application will be available at [http://localhost:3000](http://localhost:3000).
+The docker-compose.yml includes:
+- MySQL 8.0 database
+- Next.js application (Node.js 25-alpine)
+- Automatic database initialization
 
-**Note:** The first time you run `docker compose up`, it will:
-1. Start the MySQL container and wait for it to be healthy
-2. Build the application container
-3. Run database migrations automatically
-4. Seed the database with sample events
+### Jelastic Cloud
 
-### Docker Configuration
+Deploy on any Jelastic provider (Infomaniak, etc.) with Nginx + Node.js + MySQL architecture.
 
-- The Dockerfile uses a multi-stage build for optimized image size
-- **MySQL 8.0** is used as the database and runs in a separate container
-- Database data persists in a Docker volume named `mysql-data`
-- The application waits for MySQL to be healthy before starting
-- Database migrations and seeding run automatically on container startup
-- Environment variables are configured in `docker-compose.yml`
-- The application runs on port 3000, MySQL on port 3306
+**Quick Setup:**
+1. Import `manifest.jps` in Jelastic dashboard
+2. Fill database credentials
+3. Click Install
 
-### MySQL Credentials (Docker)
+**Manual Setup:**
+1. Create environment: Nginx (8 cloudlets) + Node.js 22.x (32 cloudlets) + MySQL 9.x (16 cloudlets)
+2. Configure database and deploy application
+3. Run build script on Node.js node:
+   ```bash
+   cd /home/jelastic/ROOT
+   bash jelastic-setup.sh
+   ```
+4. Configure Nginx reverse proxy
+5. Start application
 
-Default credentials configured in `docker-compose.yml`:
-- **Host:** localhost (or `mysql` from within the app container)
-- **Port:** 3306
-- **Database:** ticketer
-- **User:** ticketer
-- **Password:** ticketerpassword
-- **Root Password:** rootpassword
+**Important:** Reduce Node.js cloudlets from 32 to 8-16 after initial build to save costs.
 
-**Important:** Change these credentials in production!
+See `manifest.jps` and `jelastic-setup.sh` for automated setup.
 
-### Environment Variables for Docker
+## Admin Panel
 
-The database connection is configured in `docker-compose.yml`:
-```env
-DATABASE_URL="mysql://ticketer:ticketerpassword@mysql:3306/ticketer"
-NEXT_TELEMETRY_DISABLED=1
-```
-
-## Jelastic Cloud Deployment
-
-The application is fully compatible with Infomaniak Jelastic Cloud. For detailed deployment instructions with:
-- **nginx 1.28.0** load balancer
-- **Node.js 25.6.0** application server  
-- **MySQL 9.6.0** database
-
-**See the comprehensive deployment guide**: [JELASTIC_DEPLOYMENT.md](JELASTIC_DEPLOYMENT.md)
-
-Quick start for Jelastic:
-1. Create environment in Jelastic with nginx, Node.js 25.6.0, and MySQL 9.6.0
-2. Configure database and note connection details
-3. Deploy application code via Git or archive upload
-4. Run setup script: `bash jelastic-setup.sh`
-5. Configure nginx with `nginx.conf` from this repository
-6. Access your application!
-
-## Project Structure
-
-- `/src/app` - Next.js app directory with pages and API routes
-- `/src/app/api` - API routes for events and seats
-- `/src/lib` - Shared utilities and Prisma client
-- `/prisma` - Database schema and migrations
+Access at `/admin` to manage events:
+- Create/edit/delete events
+- View bookings
+- Track seat availability
 
 ## API Endpoints
 
 ### Events
 - `GET /api/events` - List all events
-- `POST /api/events` - Create a new event
-- `GET /api/events/[eventId]` - Get event details with seats
-- `PATCH /api/events/[eventId]` - Update event details
-- `DELETE /api/events/[eventId]` - Delete an event
-- `GET /api/events/[eventId]/seats` - Get seats for an event
-- `PATCH /api/events/[eventId]/seats` - Update seat status (book/reserve)
+- `POST /api/events` - Create event
+- `GET /api/events/[id]` - Get event with seats
+- `PATCH /api/events/[id]` - Update event
+- `DELETE /api/events/[id]` - Delete event
+- `PATCH /api/events/[id]/seats` - Update seat status
 
-### Health & Monitoring
-- `GET /api/health` - Health check endpoint (returns application status and database connectivity)
+### Health
+- `GET /api/health` - Health check
+
+## Project Structure
+
+```
+src/
+  app/
+    api/          # API routes
+    admin/        # Admin panel
+    events/       # Event pages
+  lib/            # Utilities, Prisma client
+prisma/
+  schema.prisma   # Database schema
+  seed.ts         # Seed data
+```
 
 ## Troubleshooting
 
-### Getting a 404 Error on /admin
-
-If you're getting a 404 error when trying to access the admin panel:
-
-1. **Make sure the development server is running:**
-   ```bash
-   npm run dev
-   ```
-
-2. **Verify the database is set up:**
-   ```bash
-   npm run db:push
-   npm run db:generate
-   npm run db:seed
-   ```
-
-3. **Clear Next.js cache and rebuild:**
-   ```bash
-   rm -rf .next
-   npm run build
-   npm run dev
-   ```
-
-4. **Check that you're using the correct URL:**
-   - The admin panel is at: `http://localhost:3000/admin`
-   - Not: `http://localhost:3000/admin/` (trailing slash might cause issues in some setups)
-
-### Other Common Issues
-
-- **Port already in use:** If port 3000 is already in use, Next.js will suggest an alternative port. Use that port instead.
-- **Database connection errors:** Ensure your `DATABASE_URL` in `.env` is correct and the database is accessible.
-- **Missing dependencies:** Run `npm install` to ensure all dependencies are installed.
+**Database connection errors:** Verify `DATABASE_URL` in `.env`  
+**Port in use:** Next.js will suggest alternative port  
+**Build errors:** Clear `.next` folder and rebuild  
+**OOM during Jelastic build:** Increase cloudlets to 32-48 temporarily
 
 ## License
 
 MIT
+
+
+
