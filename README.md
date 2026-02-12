@@ -57,9 +57,56 @@ Access at http://localhost:3000
 
 ### Jelastic Cloud Deployment
 
-**One-Click:** Import `manifest.jps` in Jelastic dashboard
+Deploy Ticketer with one click to any [Jelastic PaaS](https://jelastic.cloud/) provider.
 
-**Manual:** See deployment instructions below
+#### Automatic Installation
+
+Click the **Deploy to Jelastic** button, specify your email address, choose one of the [Jelastic Public Cloud providers](https://jelastic.cloud/) and press **Install**.
+
+[![Deploy](https://github.com/jelastic-jps/git-push-deploy/raw/master/images/deploy-to-jelastic.png)](https://jelastic.com/install-application/?jps=https://raw.githubusercontent.com/klukama/ticketer/main/manifest.jps)
+
+The deployment will automatically:
+- Create an Nginx load balancer (8 cloudlets)
+- Set up Node.js 22.x application server (32 cloudlets)
+- Configure MySQL 9.x database (16 cloudlets)
+- Install all dependencies and build the application
+- Configure Nginx reverse proxy
+- Initialize database with sample events
+
+**Note:** You'll be prompted to set a database password during installation.
+
+#### Manual Installation
+
+If you prefer manual setup or need custom configuration:
+
+1. **Import Manifest**
+   - Go to Jelastic Dashboard → Import
+   - Upload or link to `manifest.jps`
+   - Configure database credentials
+   - Click Install
+
+2. **Manual Setup** (Alternative)
+   - Create environment: Nginx (8 cloudlets) + Node.js 22.x (32 cloudlets) + MySQL 9.x (16 cloudlets)
+   - Configure database and deploy application
+   - SSH to Node.js node and run:
+     ```bash
+     cd /home/jelastic/ROOT
+     bash jelastic-setup.sh
+     ```
+   - Configure Nginx reverse proxy
+   - Start application
+
+**Post-Deployment Optimization:**
+After successful installation, reduce Node.js cloudlets from 32 to 8-16 to optimize costs while maintaining performance.
+
+**Access Your Application:**
+- Homepage: `https://your-env-name.jelastic.provider.com`
+- Admin Panel: `https://your-env-name.jelastic.provider.com/admin`
+- Health Check: `https://your-env-name.jelastic.provider.com/api/health`
+
+**📖 For detailed Jelastic deployment guide, see [JELASTIC_HOSTING.md](JELASTIC_HOSTING.md)**
+
+See `manifest.jps` and `jelastic-setup.sh` for deployment automation details.
 
 ## Deployment Options
 
@@ -71,32 +118,10 @@ docker compose up -d
 
 The docker-compose.yml includes:
 - MySQL 8.0 database
-- Next.js application (Node.js 25-alpine)
-- Automatic database initialization
+- Next.js application with automatic initialization
+- Health checks and automatic restarts
 
-### Jelastic Cloud
-
-Deploy on any Jelastic provider (Infomaniak, etc.) with Nginx + Node.js + MySQL architecture.
-
-**Quick Setup:**
-1. Import `manifest.jps` in Jelastic dashboard
-2. Fill database credentials
-3. Click Install
-
-**Manual Setup:**
-1. Create environment: Nginx (8 cloudlets) + Node.js 22.x (32 cloudlets) + MySQL 9.x (16 cloudlets)
-2. Configure database and deploy application
-3. Run build script on Node.js node:
-   ```bash
-   cd /home/jelastic/ROOT
-   bash jelastic-setup.sh
-   ```
-4. Configure Nginx reverse proxy
-5. Start application
-
-**Important:** Reduce Node.js cloudlets from 32 to 8-16 after initial build to save costs.
-
-See `manifest.jps` and `jelastic-setup.sh` for automated setup.
+Access at http://localhost:3000
 
 ## Admin Panel
 
