@@ -2,8 +2,7 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider      = "prisma-client-js"
-  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -20,12 +19,12 @@ model Event {
   totalSeats  Int       @default(0)
   imageUrl    String?
   // Seating configuration
-  leftRows    Int       @default(6)  // Number of rows in left section
-  leftCols    Int       @default(5)  // Number of columns in left section
-  rightRows   Int       @default(6)  // Number of rows in right section
-  rightCols   Int       @default(5)  // Number of columns in right section
-  backRows    Int       @default(0)  // Number of rows in back section
-  backCols    Int       @default(0)  // Number of columns in back section
+  leftRows    Int       @default(6) // Number of rows in left section
+  leftCols    Int       @default(5) // Number of columns in left section
+  rightRows   Int       @default(6) // Number of rows in right section
+  rightCols   Int       @default(5) // Number of columns in right section
+  backRows    Int       @default(0) // Number of rows in back section
+  backCols    Int       @default(0) // Number of columns in back section
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   seats       Seat[]
@@ -33,20 +32,20 @@ model Event {
 }
 
 model Seat {
-  id           String   @id @default(cuid())
+  id           String    @id @default(cuid())
   eventId      String
-  event        Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  event        Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
   row          String
   number       Int
-  section      String   @default("LEFT")  // LEFT, RIGHT, or BACK
-  status       String   @default("AVAILABLE")
+  section      String    @default("LEFT") // LEFT, RIGHT, or BACK
+  status       String    @default("AVAILABLE")
   bookedBy     String?
   bookedAt     DateTime?
-  ticketNumber String?  @unique // Unique ticket number for each booked seat
+  ticketNumber String?   @unique // Unique ticket number for each booked seat
   bookingId    String?
-  booking      Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  booking      Booking?  @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   @@unique([eventId, section, row, number])
   @@index([eventId])
