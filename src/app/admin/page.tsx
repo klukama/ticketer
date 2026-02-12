@@ -24,6 +24,7 @@ interface Seat {
   eventId: string
   row: string
   number: number
+  section: string
   status: 'AVAILABLE' | 'RESERVED' | 'BOOKED'
   bookedBy: string | null
   bookedAt: string | null
