@@ -52,7 +52,6 @@ export default function AdminPage() {
     description: '',
     venue: '',
     date: '',
-    totalSeats: 30,
     imageUrl: '',
     leftRows: 6,
     leftCols: 5,
@@ -85,12 +84,13 @@ export default function AdminPage() {
 
   const createEventMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
+      const totalSeats = data.leftRows * data.leftCols + data.rightRows * data.rightCols + data.backRows * data.backCols
       const res = await fetch('/api/events', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...data,
-          totalSeats: Number(data.totalSeats),
+          totalSeats,
         }),
       })
       if (!res.ok) throw new Error('Failed to create event')
@@ -117,12 +117,13 @@ export default function AdminPage() {
 
   const updateEventMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: typeof formData }) => {
+      const totalSeats = data.leftRows * data.leftCols + data.rightRows * data.rightCols + data.backRows * data.backCols
       const res = await fetch(`/api/events/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...data,
-          totalSeats: Number(data.totalSeats),
+          totalSeats,
         }),
       })
       if (!res.ok) throw new Error('Failed to update event')
@@ -179,7 +180,6 @@ export default function AdminPage() {
       description: '',
       venue: '',
       date: '',
-      totalSeats: 30,
       imageUrl: '',
       leftRows: 6,
       leftCols: 5,
@@ -207,7 +207,6 @@ export default function AdminPage() {
       description: event.description || '',
       venue: event.venue,
       date: formattedDate,
-      totalSeats: event.totalSeats,
       imageUrl: event.imageUrl || '',
       leftRows: eventWithConfig.leftRows || 6,
       leftCols: eventWithConfig.leftCols || 5,
@@ -371,22 +370,6 @@ export default function AdminPage() {
               required
             />
             
-            <TextInput
-              label="Total Seats"
-              type="number"
-              min={1}
-              value={formData.totalSeats}
-              onChange={(e) => setFormData({ ...formData, totalSeats: Number(e.target.value) })}
-              required
-            />
-            
-            <TextInput
-              label="Image URL (optional)"
-              placeholder="https://example.com/image.jpg"
-              value={formData.imageUrl}
-              onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-            />
-            
             <Title order={4} size="h5" mt="md">Seating Configuration</Title>
             
             <Group grow>
@@ -448,7 +431,7 @@ export default function AdminPage() {
             </Group>
             
             <Text size="sm" c="dimmed">
-              The actual number of seats created will be: (Left Rows × Left Columns) + (Right Rows × Right Columns) + (Back Rows × Back Columns). The &quot;Total Seats&quot; field above is for display purposes and does not need to match exactly.
+              Total seats will be automatically calculated: (Left Rows × Left Columns) + (Right Rows × Right Columns) + (Back Rows × Back Columns) = {formData.leftRows * formData.leftCols + formData.rightRows * formData.rightCols + formData.backRows * formData.backCols} seats
             </Text>
             
             <Group justify="flex-end" gap="xs">

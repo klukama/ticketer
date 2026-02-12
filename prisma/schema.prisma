@@ -37,7 +37,7 @@ model Seat {
   event        Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
   row          String
   number       Int
-  section      String    @default("LEFT") // LEFT, RIGHT, or BACK
+  section      String    @default("LEFT") // LEFT, RIGHT, or RANG
   status       String    @default("AVAILABLE")
   bookedBy     String?
   bookedAt     DateTime?

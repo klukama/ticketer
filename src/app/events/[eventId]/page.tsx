@@ -138,7 +138,7 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
   // Group seats by section and row
   const leftSeats = event.seats.filter(seat => seat.section === 'LEFT')
   const rightSeats = event.seats.filter(seat => seat.section === 'RIGHT')
-  const backSeats = event.seats.filter(seat => seat.section === 'BACK')
+  const backSeats = event.seats.filter(seat => seat.section === 'RANG')
 
   const groupByRow = (seats: Seat[]) => {
     return seats.reduce((acc, seat) => {

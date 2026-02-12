@@ -137,7 +137,7 @@ export async function POST(request: Request) {
             eventId: newEvent.id,
             row,
             number: i,
-            section: 'BACK',
+            section: 'RANG',
             status: 'AVAILABLE',
           })
         }
