@@ -15,39 +15,54 @@ A modern event ticketing and seat selection system built with Next.js, React, Ma
 
 - **Frontend**: React 19, Mantine UI, TanStack Query
 - **Backend**: Next.js 16 API Routes
-- **Database**: SQLite (default) or MySQL via Prisma ORM
+- **Database**: MySQL via Prisma ORM
 
 ## Quick Start
 
-```bash
-npm install
-cp .env.example .env
-npm run db:generate
-npm run db:push
-npm run db:seed
-npm run dev
-```
+### Prerequisites
+
+- Node.js 18+ 
+- MySQL 8.0+
+
+### Local Development
+
+1. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+2. **Set up MySQL database:**
+   
+   Create a MySQL database:
+   ```sql
+   CREATE DATABASE ticketer;
+   ```
+
+3. **Configure environment variables:**
+   
+   Copy the example env file and update with your MySQL credentials:
+   ```bash
+   cp .env.example .env
+   ```
+   
+   Edit `.env` and update the `DATABASE_URL`:
+   ```env
+   DATABASE_URL="mysql://root:password@localhost:3306/ticketer"
+   ```
+
+4. **Initialize database:**
+   ```bash
+   npm run db:generate
+   npm run db:push
+   npm run db:seed
+   ```
+
+5. **Start development server:**
+   ```bash
+   npm run dev
+   ```
 
 Open http://localhost:3000
-
-That's it! The app uses SQLite by default, so no database setup is required.
-
-### Using MySQL (Optional)
-
-If you want to use MySQL instead of SQLite, create a `.env` file:
-
-```env
-DATABASE_URL="mysql://user:password@localhost:3306/ticketer"
-```
-
-Then run the same commands:
-
-```bash
-npm run db:generate
-npm run db:push
-npm run db:seed
-npm run dev
-```
 
 ## Admin Panel
 
@@ -92,11 +107,65 @@ npm run build
 npm start
 ```
 
+## Deployment on Virtuozzo Application Platform (PaaS)
+
+Ticketer is ready for deployment on [Virtuozzo Application Platform](https://www.virtuozzo.com/application-platform-docs/nodejs-center/) and compatible PaaS providers (Jelastic, etc.).
+
+### Deployment Steps
+
+1. **Create Environment:**
+   - Add a **Node.js** application server (recommended: Node.js 18+)
+   - Add a **MySQL** database node (recommended: MySQL 8.0+)
+
+2. **Configure Database:**
+   - The platform will automatically provide database credentials as environment variables
+   - Set the `DATABASE_URL` environment variable in the format:
+     ```
+     mysql://user:password@host:3306/database
+     ```
+   - Or use individual environment variables if your platform provides them separately
+
+3. **Deploy Application:**
+   - Deploy via Git, upload archive, or use platform's deployment methods
+   - The application will be automatically built during deployment
+
+4. **Initialize Database:**
+   - SSH into your Node.js node or use the platform's Web SSH
+   - Navigate to your application directory (usually `/home/jelastic/ROOT` or similar)
+   - Run database initialization:
+     ```bash
+     npm run db:generate
+     npm run db:push
+     npm run db:seed
+     ```
+
+5. **Access Your Application:**
+   - Homepage: `https://your-env-name.provider.com`
+   - Admin Panel: `https://your-env-name.provider.com/admin`
+   - Health Check: `https://your-env-name.provider.com/api/health`
+
+### Environment Variables for PaaS
+
+The following environment variables should be configured in your PaaS environment:
+
+```env
+DATABASE_URL=mysql://user:password@mysql-node:3306/ticketer
+NODE_ENV=production
+NEXT_TELEMETRY_DISABLED=1
+```
+
+### Post-Deployment
+
+- Monitor your application using the platform's built-in monitoring tools
+- Use the health check endpoint (`/api/health`) for uptime monitoring
+- Scale your environment as needed based on traffic
+
 ## Troubleshooting
 
-**Database connection errors:** Verify `DATABASE_URL` in `.env`  
+**Database connection errors:** Verify `DATABASE_URL` in your environment variables  
 **Port in use:** Next.js will suggest alternative port  
-**Build errors:** Clear `.next` folder and rebuild
+**Build errors:** Clear `.next` folder and rebuild  
+**Prisma errors:** Run `npm run db:generate` after any schema changes
 
 ## License
 
