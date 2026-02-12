@@ -192,13 +192,11 @@ Or manually:
 
 ```bash
 npm cache clean --force
-NODE_OPTIONS="--max-old-space-size=4096" npm ci --omit=dev
-npm install --save-dev typescript @types/node @types/react @types/react-dom esbuild tsx prisma
+NODE_OPTIONS="--max-old-space-size=4096" npm ci
 npm run db:generate
 npx prisma db push --accept-data-loss
 npm run db:seed
 NODE_OPTIONS="--max-old-space-size=4096" npm run build
-npm prune --production
 ```
 
 #### 6. Configure Nginx
@@ -365,12 +363,10 @@ Access logs in Jelastic dashboard:
 cd /home/jelastic/ROOT
 git pull origin main
 npm cache clean --force
-NODE_OPTIONS="--max-old-space-size=4096" npm ci --omit=dev
-npm install --save-dev typescript @types/node @types/react @types/react-dom esbuild tsx prisma
+NODE_OPTIONS="--max-old-space-size=4096" npm ci
 npm run db:generate
 npx prisma db push --accept-data-loss
 NODE_OPTIONS="--max-old-space-size=4096" npm run build
-npm prune --production
 # Restart via Jelastic dashboard
 ```
 

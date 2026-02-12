@@ -13,26 +13,21 @@ fi
 echo "Step 1: Clean cache"
 npm cache clean --force
 
-echo "Step 2: Install production dependencies"
-NODE_OPTIONS="--max-old-space-size=4096" npm ci --omit=dev
+echo "Step 2: Install all dependencies"
+NODE_OPTIONS="--max-old-space-size=4096" npm ci
 
-echo "Step 3: Install build dependencies"
-npm install --save-dev typescript @types/node @types/react @types/react-dom esbuild tsx prisma
-
-echo "Step 4: Generate Prisma client"
+echo "Step 3: Generate Prisma client"
 npm run db:generate
 
-echo "Step 5: Push database schema"
+echo "Step 4: Push database schema"
 npx prisma db push --accept-data-loss
 
-echo "Step 6: Seed database"
+echo "Step 5: Seed database"
 npm run db:seed || echo "Seeding skipped"
 
-echo "Step 7: Build application"
+echo "Step 6: Build application"
 NODE_OPTIONS="--max-old-space-size=4096" npm run build
 
-echo "Step 8: Clean up dev dependencies"
-npm prune --production
 
 echo ""
 echo "Setup complete! Start with: npm start"
