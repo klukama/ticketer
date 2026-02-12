@@ -107,7 +107,7 @@
         "echo \"PORT=3000\" >> .env",
         "echo \"HOSTNAME=0.0.0.0\" >> .env",
         "npm cache clean --force",
-        "NODE_OPTIONS=\"--max-old-space-size=4096\" npm ci",
+        "NODE_ENV=development NODE_OPTIONS=\"--max-old-space-size=4096\" npm install",
         "npm run db:generate",
         "npx prisma db push --accept-data-loss",
         "npm run db:seed || echo 'Seeding skipped'",

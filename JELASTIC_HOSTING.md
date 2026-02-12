@@ -192,12 +192,14 @@ Or manually:
 
 ```bash
 npm cache clean --force
-NODE_OPTIONS="--max-old-space-size=4096" npm ci
+NODE_ENV=development NODE_OPTIONS="--max-old-space-size=4096" npm install
 npm run db:generate
 npx prisma db push --accept-data-loss
 npm run db:seed
 NODE_OPTIONS="--max-old-space-size=4096" npm run build
 ```
+
+**Note:** Setting `NODE_ENV=development` during install ensures devDependencies (TypeScript, build tools) are installed, which are required for building.
 
 #### 6. Configure Nginx
 
@@ -363,7 +365,7 @@ Access logs in Jelastic dashboard:
 cd /home/jelastic/ROOT
 git pull origin main
 npm cache clean --force
-NODE_OPTIONS="--max-old-space-size=4096" npm ci
+NODE_ENV=development NODE_OPTIONS="--max-old-space-size=4096" npm install
 npm run db:generate
 npx prisma db push --accept-data-loss
 NODE_OPTIONS="--max-old-space-size=4096" npm run build

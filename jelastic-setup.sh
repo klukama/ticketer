@@ -13,8 +13,8 @@ fi
 echo "Step 1: Clean cache"
 npm cache clean --force
 
-echo "Step 2: Install all dependencies"
-NODE_OPTIONS="--max-old-space-size=4096" npm ci
+echo "Step 2: Install all dependencies (including devDependencies needed for build)"
+NODE_ENV=development NODE_OPTIONS="--max-old-space-size=4096" npm install
 
 echo "Step 3: Generate Prisma client"
 npm run db:generate
