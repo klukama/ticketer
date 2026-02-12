@@ -52,7 +52,6 @@ export default function AdminPage() {
     description: '',
     venue: '',
     date: '',
-    imageUrl: '',
     leftRows: 6,
     leftCols: 5,
     rightRows: 6,
@@ -180,7 +179,6 @@ export default function AdminPage() {
       description: '',
       venue: '',
       date: '',
-      imageUrl: '',
       leftRows: 6,
       leftCols: 5,
       rightRows: 6,
@@ -207,7 +205,6 @@ export default function AdminPage() {
       description: event.description || '',
       venue: event.venue,
       date: formattedDate,
-      imageUrl: event.imageUrl || '',
       leftRows: eventWithConfig.leftRows || 6,
       leftCols: eventWithConfig.leftCols || 5,
       rightRows: eventWithConfig.rightRows || 6,
@@ -482,6 +479,141 @@ export default function AdminPage() {
                     {bookingsEvent.seats.filter(s => s.status === 'AVAILABLE').length}
                   </Text>
                 </div>
+              </Group>
+            </Paper>
+
+            {/* Seat Visualization */}
+            <Paper p="md" withBorder>
+              <Title order={4} size="h5" mb="md">Sitzplan</Title>
+              <Stack gap="sm">
+                {/* Back Section - Centered at the top */}
+                {(() => {
+                  const backSeats = bookingsEvent.seats.filter(seat => seat.section === 'RANG')
+                  const backSeatsByRow = backSeats.reduce((acc, seat) => {
+                    if (!acc[seat.row]) acc[seat.row] = []
+                    acc[seat.row].push(seat)
+                    return acc
+                  }, {} as Record<string, typeof backSeats>)
+                  const backRows = Object.keys(backSeatsByRow).sort().reverse()
+                  
+                  return backRows.length > 0 && (
+                    <>
+                      {backRows.map((row) => (
+                        <Group key={`back-${row}`} gap="md" justify="center">
+                          <Text fw={700} w={30}>{row}</Text>
+                          <Group gap="xs">
+                            {(backSeatsByRow[row] || []).sort((a, b) => a.number - b.number).map(seat => (
+                              <Button
+                                key={seat.id}
+                                size="sm"
+                                color={seat.status === 'BOOKED' ? 'red' : 'green'}
+                                variant="light"
+                                disabled
+                                style={{ width: 50 }}
+                              >
+                                {seat.number}
+                              </Button>
+                            ))}
+                          </Group>
+                          <Text fw={700} w={30}>{row}</Text>
+                        </Group>
+                      ))}
+                      <div style={{ height: '20px' }} />
+                    </>
+                  )
+                })()}
+
+                {/* Main sections (Left and Right) */}
+                {(() => {
+                  const leftSeats = bookingsEvent.seats.filter(seat => seat.section === 'LEFT')
+                  const rightSeats = bookingsEvent.seats.filter(seat => seat.section === 'RIGHT')
+                  
+                  const leftSeatsByRow = leftSeats.reduce((acc, seat) => {
+                    if (!acc[seat.row]) acc[seat.row] = []
+                    acc[seat.row].push(seat)
+                    return acc
+                  }, {} as Record<string, typeof leftSeats>)
+                  
+                  const rightSeatsByRow = rightSeats.reduce((acc, seat) => {
+                    if (!acc[seat.row]) acc[seat.row] = []
+                    acc[seat.row].push(seat)
+                    return acc
+                  }, {} as Record<string, typeof rightSeats>)
+                  
+                  const allRows = Array.from(new Set([
+                    ...Object.keys(leftSeatsByRow),
+                    ...Object.keys(rightSeatsByRow)
+                  ])).sort().reverse()
+
+                  return allRows.map((row) => (
+                    <Group key={row} gap="md" justify="center" align="flex-start">
+                      {/* Left Section */}
+                      <Group gap="xs" justify="flex-end" style={{ minWidth: '300px' }}>
+                        <Text fw={700} w={30}>{row}</Text>
+                        <Group gap="xs">
+                          {(leftSeatsByRow[row] || []).sort((a, b) => a.number - b.number).map(seat => (
+                            <Button
+                              key={seat.id}
+                              size="sm"
+                              color={seat.status === 'BOOKED' ? 'red' : 'green'}
+                              variant="light"
+                              disabled
+                              style={{ width: 50 }}
+                            >
+                              {seat.number}
+                            </Button>
+                          ))}
+                        </Group>
+                      </Group>
+
+                      {/* Aisle/Gap between sections */}
+                      <div style={{ width: '60px' }} />
+
+                      {/* Right Section */}
+                      <Group gap="xs" justify="flex-start" style={{ minWidth: '300px' }}>
+                        <Group gap="xs">
+                          {(rightSeatsByRow[row] || []).sort((a, b) => a.number - b.number).map(seat => (
+                            <Button
+                              key={seat.id}
+                              size="sm"
+                              color={seat.status === 'BOOKED' ? 'red' : 'green'}
+                              variant="light"
+                              disabled
+                              style={{ width: 50 }}
+                            >
+                              {seat.number}
+                            </Button>
+                          ))}
+                        </Group>
+                        <Text fw={700} w={30}>{row}</Text>
+                      </Group>
+                    </Group>
+                  ))
+                })()}
+              </Stack>
+
+              {/* Stage */}
+              <Paper 
+                mt="lg" 
+                p="md" 
+                ta="center"
+                style={{ 
+                  backgroundColor: '#adb5bd',
+                  color: '#fff',
+                  fontWeight: 700,
+                  fontSize: '1.2rem'
+                }}
+              >
+                Bühne
+              </Paper>
+
+              <Group gap="md" mt="lg">
+                <Group gap="xs">
+                  <Button size="xs" color="green" variant="light" disabled>Verfügbar</Button>
+                </Group>
+                <Group gap="xs">
+                  <Button size="xs" color="red" variant="light" disabled>Gebucht</Button>
+                </Group>
               </Group>
             </Paper>
 
