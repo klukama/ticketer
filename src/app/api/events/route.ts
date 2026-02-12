@@ -39,81 +39,115 @@ export async function POST(request: Request) {
       )
     }
 
-    // Set defaults for seating configuration
-    const leftRowsCount = leftRows || 6
-    const leftColsCount = leftCols || 5
-    const rightRowsCount = rightRows || 6
-    const rightColsCount = rightCols || 5
-    const backRowsCount = backRows || 0
-    const backColsCount = backCols || 0
+    // Validate seating configuration fields are non-negative integers, if provided
+    const seatingFields: { name: string; value: unknown }[] = [
+      { name: 'leftRows', value: leftRows },
+      { name: 'leftCols', value: leftCols },
+      { name: 'rightRows', value: rightRows },
+      { name: 'rightCols', value: rightCols },
+      { name: 'backRows', value: backRows },
+      { name: 'backCols', value: backCols },
+    ]
 
-    const event = await prisma.event.create({
-      data: {
-        title,
-        description,
-        venue,
-        date: new Date(date),
-        totalSeats,
-        imageUrl,
-        leftRows: leftRowsCount,
-        leftCols: leftColsCount,
-        rightRows: rightRowsCount,
-        rightCols: rightColsCount,
-        backRows: backRowsCount,
-        backCols: backColsCount,
-      },
-    })
-
-    // Create seats for the event
-    const seats = []
-    
-    // Generate row labels (A, B, C, ...)
-    const getRowLabel = (index: number) => String.fromCharCode(65 + index) // 65 is 'A'
-
-    // Create left section seats
-    for (let rowIndex = 0; rowIndex < leftRowsCount; rowIndex++) {
-      const row = getRowLabel(rowIndex)
-      for (let i = 1; i <= leftColsCount; i++) {
-        seats.push({
-          eventId: event.id,
-          row,
-          number: i,
-          section: 'LEFT',
-          status: 'AVAILABLE',
-        })
+    for (const field of seatingFields) {
+      const { name, value } = field
+      if (value !== undefined && value !== null) {
+        const num = Number(value)
+        if (!Number.isInteger(num) || num < 0) {
+          return NextResponse.json(
+            { error: `Invalid seating configuration: ${name} must be a non-negative integer` },
+            { status: 400 }
+          )
+        }
       }
     }
 
-    // Create right section seats
-    for (let rowIndex = 0; rowIndex < rightRowsCount; rowIndex++) {
-      const row = getRowLabel(rowIndex)
-      for (let i = 1; i <= rightColsCount; i++) {
-        seats.push({
-          eventId: event.id,
-          row,
-          number: i,
-          section: 'RIGHT',
-          status: 'AVAILABLE',
-        })
-      }
-    }
+    // Set defaults for seating configuration (values are validated and coerced to numbers above)
+    const leftRowsCount =
+      leftRows !== undefined && leftRows !== null ? Number(leftRows) : 6
+    const leftColsCount =
+      leftCols !== undefined && leftCols !== null ? Number(leftCols) : 5
+    const rightRowsCount =
+      rightRows !== undefined && rightRows !== null ? Number(rightRows) : 6
+    const rightColsCount =
+      rightCols !== undefined && rightCols !== null ? Number(rightCols) : 5
+    const backRowsCount =
+      backRows !== undefined && backRows !== null ? Number(backRows) : 0
+    const backColsCount =
+      backCols !== undefined && backCols !== null ? Number(backCols) : 0
 
-    // Create back section seats
-    for (let rowIndex = 0; rowIndex < backRowsCount; rowIndex++) {
-      const row = getRowLabel(rowIndex)
-      for (let i = 1; i <= backColsCount; i++) {
-        seats.push({
-          eventId: event.id,
-          row,
-          number: i,
-          section: 'BACK',
-          status: 'AVAILABLE',
-        })
-      }
-    }
+    // Use transaction to ensure atomicity
+    const event = await prisma.$transaction(async (tx) => {
+      const newEvent = await tx.event.create({
+        data: {
+          title,
+          description,
+          venue,
+          date: new Date(date),
+          totalSeats,
+          imageUrl,
+          leftRows: leftRowsCount,
+          leftCols: leftColsCount,
+          rightRows: rightRowsCount,
+          rightCols: rightColsCount,
+          backRows: backRowsCount,
+          backCols: backColsCount,
+        },
+      })
 
-    await prisma.seat.createMany({
-      data: seats,
+      // Create seats for the event
+      const seats = []
+
+      // Generate row labels (A, B, C, ...)
+      const getRowLabel = (index: number) => String.fromCharCode(65 + index) // 65 is 'A'
+
+      // Create left section seats
+      for (let rowIndex = 0; rowIndex < leftRowsCount; rowIndex++) {
+        const row = getRowLabel(rowIndex)
+        for (let i = 1; i <= leftColsCount; i++) {
+          seats.push({
+            eventId: newEvent.id,
+            row,
+            number: i,
+            section: 'LEFT',
+            status: 'AVAILABLE',
+          })
+        }
+      }
+
+      // Create right section seats
+      for (let rowIndex = 0; rowIndex < rightRowsCount; rowIndex++) {
+        const row = getRowLabel(rowIndex)
+        for (let i = 1; i <= rightColsCount; i++) {
+          seats.push({
+            eventId: newEvent.id,
+            row,
+            number: i,
+            section: 'RIGHT',
+            status: 'AVAILABLE',
+          })
+        }
+      }
+
+      // Create back section seats
+      for (let rowIndex = 0; rowIndex < backRowsCount; rowIndex++) {
+        const row = getRowLabel(rowIndex)
+        for (let i = 1; i <= backColsCount; i++) {
+          seats.push({
+            eventId: newEvent.id,
+            row,
+            number: i,
+            section: 'BACK',
+            status: 'AVAILABLE',
+          })
+        }
+      }
+
+      await tx.seat.createMany({
+        data: seats,
+      })
+
+      return newEvent
     })
 
     return NextResponse.json(event, { status: 201 })

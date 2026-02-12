@@ -38,35 +38,45 @@ export async function PATCH(
       )
     }
 
-    // Get the current seat to check its status
-    const currentSeat = await prisma.seat.findUnique({
-      where: { id: seatId }
-    })
+    // Use transaction to ensure atomic seat update with validation
+    const seat = await prisma.$transaction(async (tx) => {
+      // Get the current seat to check its status
+      const currentSeat = await tx.seat.findUnique({
+        where: { id: seatId }
+      })
 
-    if (!currentSeat) {
-      return NextResponse.json({ error: 'Seat not found' }, { status: 404 })
-    }
+      if (!currentSeat) {
+        throw new Error('Seat not found')
+      }
 
-    // Prevent booking if seat is not available (race condition protection)
-    if (status === 'BOOKED' && currentSeat.status !== 'AVAILABLE') {
-      return NextResponse.json(
-        { error: 'Seat is no longer available' },
-        { status: 409 }
-      )
-    }
+      // Prevent booking if seat is not available (race condition protection)
+      if (status === 'BOOKED' && currentSeat.status !== 'AVAILABLE') {
+        throw new Error('Seat is no longer available')
+      }
 
-    const seat = await prisma.seat.update({
-      where: { id: seatId },
-      data: {
-        status,
-        bookedBy: status === 'BOOKED' ? bookedBy : null,
-        bookedAt: status === 'BOOKED' ? new Date() : null,
-      },
+      return await tx.seat.update({
+        where: { id: seatId },
+        data: {
+          status,
+          bookedBy: status === 'BOOKED' ? bookedBy : null,
+          bookedAt: status === 'BOOKED' ? new Date() : null,
+        },
+      })
     })
 
     return NextResponse.json(seat)
   } catch (error) {
     console.error('Error updating seat:', error)
+
+    if (error instanceof Error) {
+      if (error.message === 'Seat not found') {
+        return NextResponse.json({ error: 'Seat not found' }, { status: 404 })
+      }
+      if (error.message === 'Seat is no longer available') {
+        return NextResponse.json({ error: 'Seat is no longer available' }, { status: 409 })
+      }
+    }
+
     return NextResponse.json({ error: 'Failed to update seat' }, { status: 500 })
   }
 }

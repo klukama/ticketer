@@ -100,23 +100,31 @@ export async function DELETE(
   try {
     const { eventId } = await params
 
-    // Check if event exists
-    const existingEvent = await prisma.event.findUnique({
-      where: { id: eventId }
-    })
+    // Use transaction to ensure atomic deletion
+    await prisma.$transaction(async (tx) => {
+      // Check if event exists
+      const existingEvent = await tx.event.findUnique({
+        where: { id: eventId }
+      })
 
-    if (!existingEvent) {
-      return NextResponse.json({ error: 'Event not found' }, { status: 404 })
-    }
+      if (!existingEvent) {
+        throw new Error('Event not found')
+      }
 
-    // Delete the event (seats will be deleted automatically due to onDelete: Cascade)
-    await prisma.event.delete({
-      where: { id: eventId }
+      // Delete the event (seats will be deleted automatically due to onDelete: Cascade)
+      await tx.event.delete({
+        where: { id: eventId }
+      })
     })
 
     return NextResponse.json({ message: 'Event deleted successfully' })
   } catch (error) {
     console.error('Error deleting event:', error)
+
+    if (error instanceof Error && error.message === 'Event not found') {
+      return NextResponse.json({ error: 'Event not found' }, { status: 404 })
+    }
+
     return NextResponse.json({ error: 'Failed to delete event' }, { status: 500 })
   }
 }
