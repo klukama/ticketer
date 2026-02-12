@@ -21,6 +21,7 @@ A modern event ticketing and seat selection system built with Next.js, React, Ma
 
 ```bash
 npm install
+cp .env.example .env
 npm run db:generate
 npm run db:push
 npm run db:seed
