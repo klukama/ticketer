@@ -100,15 +100,15 @@ export default function AdminPage() {
       setCreateModalOpen(false)
       resetForm()
       notifications.show({
-        title: 'Success!',
-        message: 'Event created successfully.',
+        title: 'Erfolg!',
+        message: 'Veranstaltung erfolgreich erstellt.',
         color: 'green',
       })
     },
     onError: () => {
       notifications.show({
-        title: 'Error',
-        message: 'Failed to create event.',
+        title: 'Fehler',
+        message: 'Veranstaltung konnte nicht erstellt werden.',
         color: 'red',
       })
     },
@@ -134,15 +134,15 @@ export default function AdminPage() {
       setSelectedEvent(null)
       resetForm()
       notifications.show({
-        title: 'Success!',
-        message: 'Event updated successfully.',
+        title: 'Erfolg!',
+        message: 'Veranstaltung erfolgreich aktualisiert.',
         color: 'green',
       })
     },
     onError: () => {
       notifications.show({
-        title: 'Error',
-        message: 'Failed to update event.',
+        title: 'Fehler',
+        message: 'Veranstaltung konnte nicht aktualisiert werden.',
         color: 'red',
       })
     },
@@ -159,15 +159,15 @@ export default function AdminPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-events'] })
       notifications.show({
-        title: 'Success!',
-        message: 'Event deleted successfully.',
+        title: 'Erfolg!',
+        message: 'Veranstaltung erfolgreich gelöscht.',
         color: 'green',
       })
     },
     onError: () => {
       notifications.show({
-        title: 'Error',
-        message: 'Failed to delete event.',
+        title: 'Fehler',
+        message: 'Veranstaltung konnte nicht gelöscht werden.',
         color: 'red',
       })
     },
@@ -225,7 +225,7 @@ export default function AdminPage() {
   }
 
   const handleDelete = (id: string, title: string) => {
-    if (confirm(`Are you sure you want to delete &quot;${title}&quot;?`)) {
+    if (confirm(`Sind Sie sicher, dass Sie "${title}" löschen möchten?`)) {
       deleteEventMutation.mutate(id)
     }
   }
@@ -237,20 +237,20 @@ export default function AdminPage() {
     <Container size="xl" py="xl">
       <Group justify="space-between" mb="xl">
         <div>
-          <Title order={1}>Admin Panel</Title>
-          <Text c="dimmed">Manage events and view bookings</Text>
+          <Title order={1}>Admin-Panel</Title>
+          <Text c="dimmed">Veranstaltungen verwalten und Buchungen anzeigen</Text>
         </div>
         <Group>
           <Link href="/">
-            <Button variant="subtle">View Public Site</Button>
+            <Button variant="subtle">Öffentliche Seite anzeigen</Button>
           </Link>
           <Button onClick={() => setCreateModalOpen(true)}>
-            Create New Event
+            Neue Veranstaltung erstellen
           </Button>
         </Group>
       </Group>
 
-      {isLoading && <Text>Loading events...</Text>}
+      {isLoading && <Text>Veranstaltungen werden geladen...</Text>}
 
       <Stack gap="md">
         {events?.map((event) => {
@@ -264,7 +264,7 @@ export default function AdminPage() {
                   <Group gap="sm" mb="xs">
                     <Title order={3}>{event.title}</Title>
                     {isPast && (
-                      <Badge color="gray" variant="light">Past Event</Badge>
+                      <Badge color="gray" variant="light">Vergangene Veranstaltung</Badge>
                     )}
                   </Group>
                   
@@ -283,7 +283,7 @@ export default function AdminPage() {
                   )}
                   
                   <Text size="sm" fw={500}>
-                    Total Seats: {event.totalSeats}
+                    Gesamtplätze: {event.totalSeats}
                   </Text>
                 </div>
 
@@ -293,20 +293,20 @@ export default function AdminPage() {
                     color="blue"
                     onClick={() => setViewBookingsEventId(event.id)}
                   >
-                    View Bookings
+                    Buchungen anzeigen
                   </Button>
                   <Button
                     variant="light"
                     onClick={() => openEditModal(event)}
                   >
-                    Edit
+                    Bearbeiten
                   </Button>
                   <Button
                     variant="light"
                     color="red"
                     onClick={() => handleDelete(event.id, event.title)}
                   >
-                    Delete
+                    Löschen
                   </Button>
                 </Group>
               </Group>
@@ -316,7 +316,7 @@ export default function AdminPage() {
 
         {!isLoading && events?.length === 0 && (
           <Text c="dimmed" ta="center" py="xl">
-            No events created yet. Click &quot;Create New Event&quot; to get started.
+            Noch keine Veranstaltungen erstellt. Klicken Sie auf &quot;Neue Veranstaltung erstellen&quot;, um zu beginnen.
           </Text>
         )}
       </Stack>
@@ -330,48 +330,48 @@ export default function AdminPage() {
           setSelectedEvent(null)
           resetForm()
         }}
-        title={editModalOpen ? 'Edit Event' : 'Create New Event'}
+        title={editModalOpen ? 'Veranstaltung bearbeiten' : 'Neue Veranstaltung erstellen'}
         size="lg"
       >
         <form onSubmit={handleSubmit}>
           <Stack gap="md">
             <TextInput
-              label="Event Title"
-              placeholder="e.g., Summer Music Festival"
+              label="Veranstaltungstitel"
+              placeholder="z.B. Sommermusikfestival"
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               required
             />
             
             <Textarea
-              label="Description"
-              placeholder="Event description..."
+              label="Beschreibung"
+              placeholder="Veranstaltungsbeschreibung..."
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               minRows={3}
             />
             
             <TextInput
-              label="Venue"
-              placeholder="e.g., City Arena"
+              label="Veranstaltungsort"
+              placeholder="z.B. Stadtarena"
               value={formData.venue}
               onChange={(e) => setFormData({ ...formData, venue: e.target.value })}
               required
             />
             
             <TextInput
-              label="Date & Time"
+              label="Datum & Uhrzeit"
               type="datetime-local"
               value={formData.date}
               onChange={(e) => setFormData({ ...formData, date: e.target.value })}
               required
             />
             
-            <Title order={4} size="h5" mt="md">Seating Configuration</Title>
+            <Title order={4} size="h5" mt="md">Sitzplatzkonfiguration</Title>
             
             <Group grow>
               <TextInput
-                label="Left Section - Rows"
+                label="Linke Sektion - Reihen"
                 type="number"
                 min={1}
                 max={26}
@@ -380,7 +380,7 @@ export default function AdminPage() {
                 required
               />
               <TextInput
-                label="Left Section - Columns"
+                label="Linke Sektion - Spalten"
                 type="number"
                 min={1}
                 value={formData.leftCols}
@@ -391,7 +391,7 @@ export default function AdminPage() {
             
             <Group grow>
               <TextInput
-                label="Right Section - Rows"
+                label="Rechte Sektion - Reihen"
                 type="number"
                 min={1}
                 max={26}
@@ -400,7 +400,7 @@ export default function AdminPage() {
                 required
               />
               <TextInput
-                label="Right Section - Columns"
+                label="Rechte Sektion - Spalten"
                 type="number"
                 min={1}
                 value={formData.rightCols}
@@ -411,7 +411,7 @@ export default function AdminPage() {
             
             <Group grow>
               <TextInput
-                label="Back Section - Rows"
+                label="Rang-Sektion - Reihen"
                 type="number"
                 min={0}
                 max={26}
@@ -419,7 +419,7 @@ export default function AdminPage() {
                 onChange={(e) => setFormData({ ...formData, backRows: Number(e.target.value) })}
               />
               <TextInput
-                label="Back Section - Columns"
+                label="Rang-Sektion - Spalten"
                 type="number"
                 min={0}
                 value={formData.backCols}
@@ -428,7 +428,7 @@ export default function AdminPage() {
             </Group>
             
             <Text size="sm" c="dimmed">
-              Total seats will be automatically calculated: (Left Rows × Left Columns) + (Right Rows × Right Columns) + (Back Rows × Back Columns) = {formData.leftRows * formData.leftCols + formData.rightRows * formData.rightCols + formData.backRows * formData.backCols} seats
+              Gesamtplätze werden automatisch berechnet: (Linke Reihen × Linke Spalten) + (Rechte Reihen × Rechte Spalten) + (Rang-Reihen × Rang-Spalten) = {formData.leftRows * formData.leftCols + formData.rightRows * formData.rightCols + formData.backRows * formData.backCols} Plätze
             </Text>
             
             <Group justify="flex-end" gap="xs">
@@ -441,13 +441,13 @@ export default function AdminPage() {
                   resetForm()
                 }}
               >
-                Cancel
+                Abbrechen
               </Button>
               <Button
                 type="submit"
                 loading={createEventMutation.isPending || updateEventMutation.isPending}
               >
-                {editModalOpen ? 'Update Event' : 'Create Event'}
+                {editModalOpen ? 'Veranstaltung aktualisieren' : 'Veranstaltung erstellen'}
               </Button>
             </Group>
           </Stack>
@@ -458,7 +458,7 @@ export default function AdminPage() {
       <Modal
         opened={!!viewBookingsEventId}
         onClose={() => setViewBookingsEventId(null)}
-        title={`Bookings for ${bookingsEvent?.title || ''}`}
+        title={`Buchungen für ${bookingsEvent?.title || ''}`}
         size="xl"
       >
         {bookingsEvent && (
@@ -466,15 +466,15 @@ export default function AdminPage() {
             <Paper p="md" withBorder>
               <Group justify="space-between">
                 <div>
-                  <Text size="sm" c="dimmed">Total Seats</Text>
+                  <Text size="sm" c="dimmed">Gesamtplätze</Text>
                   <Text size="lg" fw={700}>{bookingsEvent.totalSeats}</Text>
                 </div>
                 <div>
-                  <Text size="sm" c="dimmed">Booked</Text>
+                  <Text size="sm" c="dimmed">Gebucht</Text>
                   <Text size="lg" fw={700} c="red">{bookedSeats.length}</Text>
                 </div>
                 <div>
-                  <Text size="sm" c="dimmed">Available</Text>
+                  <Text size="sm" c="dimmed">Verfügbar</Text>
                   <Text size="lg" fw={700} c="green">
                     {bookingsEvent.seats.filter(s => s.status === 'AVAILABLE').length}
                   </Text>
@@ -621,9 +621,9 @@ export default function AdminPage() {
               <Table striped highlightOnHover>
                 <Table.Thead>
                   <Table.Tr>
-                    <Table.Th>Seat</Table.Th>
-                    <Table.Th>Customer Name</Table.Th>
-                    <Table.Th>Booked At</Table.Th>
+                    <Table.Th>Platz</Table.Th>
+                    <Table.Th>Kundenname</Table.Th>
+                    <Table.Th>Gebucht am</Table.Th>
                   </Table.Tr>
                 </Table.Thead>
                 <Table.Tbody>
@@ -633,7 +633,7 @@ export default function AdminPage() {
                       <Table.Td>{seat.bookedBy || 'N/A'}</Table.Td>
                       <Table.Td>
                         {seat.bookedAt 
-                          ? new Date(seat.bookedAt).toLocaleString()
+                          ? new Date(seat.bookedAt).toLocaleString('de-DE')
                           : 'N/A'
                         }
                       </Table.Td>
@@ -643,7 +643,7 @@ export default function AdminPage() {
               </Table>
             ) : (
               <Text c="dimmed" ta="center" py="xl">
-                No bookings yet for this event.
+                Noch keine Buchungen für diese Veranstaltung.
               </Text>
             )}
           </Stack>
