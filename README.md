@@ -21,7 +21,7 @@ A modern event ticketing and seat selection system built with Next.js, React, Ma
 
 ### Prerequisites
 
-- Node.js 18+ installed (Node.js 25.6.0 for Jelastic Cloud deployment)
+- Node.js 18+ installed (Node.js 22.x LTS recommended for production)
 - MySQL database (for production) or SQLite (for local development)
 - Docker and Docker Compose (for containerized deployment)
 
@@ -29,15 +29,21 @@ A modern event ticketing and seat selection system built with Next.js, React, Ma
 
 This application can be deployed in multiple ways:
 - **Local Development**: Using SQLite or MySQL
-- **Docker**: Using Docker Compose with MySQL 8.0
-- **Jelastic Cloud (One-Click)**: Deploy instantly using the JPS manifest - [See One-Click Deployment](MANIFEST_README.md) 
-- **Jelastic Cloud (Manual)**: Infomaniak Jelastic with nginx 1.28.0, Node.js 25.6.0, and MySQL 9.6.0 - [See Manual Deployment Guide](JELASTIC_DEPLOYMENT.md)
+- **Docker**: Using Docker Compose with MySQL
+- **Jelastic Cloud (One-Click)**: Deploy instantly using the JPS manifest - [See One-Click Guide](MANIFEST_README.md) 
+- **Jelastic Cloud (3-Node Setup)**: Step-by-step manual deployment - [See 3-Node Setup Guide](JELASTIC_3NODE_SETUP.md)
+- **Jelastic Cloud (Detailed)**: Complete deployment guide - [See Full Deployment Guide](JELASTIC_DEPLOYMENT.md)
 
 #### Quick Deploy to Jelastic/Virtuozzo
 
-[![Deploy to Jelastic](https://img.shields.io/badge/Deploy%20to-Jelastic-blue?logo=jelastic)](https://jelastic.com/install-application/?jps=https://raw.githubusercontent.com/klukama/ticketer/main/manifest.jps)
+[![Deploy to Jelastic](https://img.shields.io/badge/Deploy%20to-Jelastic-blue?logo=jelastic)](https://jelastic.com/install-application/?jps=https://raw.githubusercontent.com/YOUR_USERNAME/ticketer/main/manifest.jps)
 
-One-click deployment to any Virtuozzo/Jelastic PaaS platform. [Learn more](MANIFEST_README.md)
+One-click deployment to any Virtuozzo/Jelastic PaaS platform with:
+- Nginx 1.28.x Load Balancer
+- Node.js 22.x LTS Application Server  
+- MySQL 9.x Database
+
+**[→ Start with the 3-Node Setup Guide](JELASTIC_3NODE_SETUP.md)** for manual deployment.
 
 
 ### Local Development Setup

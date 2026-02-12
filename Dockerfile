@@ -29,6 +29,10 @@ ENV DATABASE_URL="mysql://user:password@localhost:3306/ticketer"
 # Generate Prisma Client
 RUN npm run db:generate
 
+# Compile TypeScript seed file to JavaScript for production
+RUN npx tsx --tsconfig tsconfig.json prisma/seed.ts --dry-run 2>/dev/null || true
+RUN npx esbuild prisma/seed.ts --bundle --platform=node --outfile=prisma/seed.js --external:@prisma/client
+
 # Build the Next.js application
 RUN npm run build
 
@@ -49,7 +53,8 @@ RUN adduser --system --uid 1001 nextjs
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/prisma/schema.prisma ./prisma/schema.prisma
+COPY --from=builder /app/prisma/seed.js ./prisma/seed.js
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/node_modules/prisma ./node_modules/prisma

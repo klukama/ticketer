@@ -138,27 +138,43 @@ HOSTNAME=0.0.0.0
 
 ### 3.3 Install Dependencies and Build
 
+**IMPORTANT**: Ensure your Node.js node has at least **8 cloudlets (4 GB RAM)** allocated before running these commands.
+
 SSH into your Node.js node or use Jelastic Web SSH:
 
 ```bash
-# Navigate to application directory (typically /home/jelastic/ROOT)
+# Navigate to application directory
 cd /home/jelastic/ROOT
 
-# Install dependencies
-npm ci
+# Clear npm cache to free memory
+npm cache clean --force
 
-# Generate Prisma client
+# Step 1: Install production dependencies first (uses less memory)
+NODE_OPTIONS="--max-old-space-size=4096" npm ci --omit=dev
+
+# Step 2: Install only the dev dependencies needed for build
+npm install --save-dev typescript @types/node @types/react @types/react-dom esbuild tsx prisma
+
+# Step 3: Generate Prisma client
 npm run db:generate
 
-# Push database schema
-npm run db:push
+# Step 4: Push database schema (creates tables)
+npx prisma db push --accept-data-loss
 
-# Seed database with initial data
-npm run db:seed
+# Step 5: Seed database with initial data
+npm run db:seed || echo "Seeding skipped or failed"
 
-# Build the application
-npm run build
+# Step 6: Build Next.js application with increased memory limit
+NODE_OPTIONS="--max-old-space-size=4096" npm run build
+
+# Step 7: Remove dev dependencies to save space (optional but recommended)
+npm prune --production
 ```
+
+**Troubleshooting OOM (Out of Memory) Errors**:
+- If you get "Killed" during npm install, increase cloudlets temporarily to 16-32
+- After successful build, you can reduce cloudlets back to 8-16 for runtime
+- Monitor memory usage in Jelastic dashboard during build
 
 ### 3.4 Configure Application Start Script
 
@@ -181,33 +197,111 @@ Click **"Restart Nodes"** on the Node.js layer to apply changes.
 
 ## Step 4: Configure Nginx Load Balancer
 
-### 4.1 Upload Nginx Configuration
+### 4.1 Get Your Node.js Internal Address
+
+First, find your Node.js node's internal address:
+1. In Jelastic dashboard, click on your **Node.js node**
+2. Look for the **Internal IP** or **Internal Hostname** (e.g., `node123456-env-name.jelastic.internal` or `192.168.x.x`)
+3. Note this down - you'll need it in the next step
+
+### 4.2 Configure Nginx
+
+**Option A: Use Jelastic Web Interface (Recommended)**
 
 1. In Jelastic dashboard, click on **Nginx node** → **Config**
-2. Navigate to `/etc/nginx/nginx.conf`
-3. Replace or modify with the configuration from `nginx.conf` in this repository
-
-**Important Configuration Changes**:
-
-In the `upstream nodejs_backend` section, update with your Node.js node's internal address:
+2. Navigate to `/etc/nginx/conf.d/` folder
+3. Create a new file called `ticketer.conf`
+4. Paste the following configuration, **replacing `YOUR_NODEJS_INTERNAL_IP` with the IP from Step 4.1**:
 
 ```nginx
 upstream nodejs_backend {
-    # Replace with your Node.js node internal address from Jelastic
-    server node-hostname:3000 max_fails=3 fail_timeout=30s;
-    
-    # For multiple Node.js nodes (horizontal scaling):
-    # server node1-hostname:3000 max_fails=3 fail_timeout=30s;
-    # server node2-hostname:3000 max_fails=3 fail_timeout=30s;
-    
+    server YOUR_NODEJS_INTERNAL_IP:3000 max_fails=3 fail_timeout=30s;
     keepalive 32;
+}
+
+server {
+    listen 80;
+    server_name _;
+
+    client_max_body_size 10M;
+
+    location / {
+        proxy_pass http://nodejs_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+    # Cache static assets from Next.js
+    location /_next/static/ {
+        proxy_pass http://nodejs_backend;
+        proxy_cache_valid 200 365d;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # Health check endpoint
+    location /api/health {
+        proxy_pass http://nodejs_backend;
+        access_log off;
+    }
 }
 ```
 
-To find your Node.js hostname:
-- Go to Jelastic dashboard
-- Click on your Node.js node
-- Look for the internal hostname (e.g., `node123456-ticketer-prod.jelastic.cloudhosted.com`)
+5. Save the file
+6. **Important**: Remove or rename the default nginx config to avoid conflicts:
+   - In `/etc/nginx/conf.d/`, rename `default.conf` to `default.conf.bak`
+
+**Option B: Use SSH**
+
+```bash
+# SSH into Nginx node
+cat > /etc/nginx/conf.d/ticketer.conf << 'EOF'
+upstream nodejs_backend {
+    server YOUR_NODEJS_INTERNAL_IP:3000 max_fails=3 fail_timeout=30s;
+    keepalive 32;
+}
+
+server {
+    listen 80;
+    server_name _;
+
+    client_max_body_size 10M;
+
+    location / {
+        proxy_pass http://nodejs_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+    location /_next/static/ {
+        proxy_pass http://nodejs_backend;
+        proxy_cache_valid 200 365d;
+        add_header Cache-Control "public, immutable";
+    }
+
+    location /api/health {
+        proxy_pass http://nodejs_backend;
+        access_log off;
+    }
+}
+EOF
+
+# Disable default config
+mv /etc/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf.bak
+```
+
+**Remember**: Replace `YOUR_NODEJS_INTERNAL_IP` with your actual Node.js internal IP!
 
 ### 4.2 Test Nginx Configuration
 
@@ -372,20 +466,29 @@ cd /home/jelastic/ROOT
 # Pull latest changes (if using Git)
 git pull origin main
 
-# Install new dependencies (if any)
-npm ci
+# Clear cache
+npm cache clean --force
+
+# Install production dependencies
+NODE_OPTIONS="--max-old-space-size=4096" npm ci --omit=dev
+
+# Install build dependencies
+npm install --save-dev typescript @types/node @types/react @types/react-dom esbuild tsx prisma
 
 # Regenerate Prisma client (if schema changed)
 npm run db:generate
 
 # Run migrations (if needed)
-npm run db:push
+npx prisma db push --accept-data-loss
 
 # Rebuild application
-npm run build
+NODE_OPTIONS="--max-old-space-size=4096" npm run build
 
-# Restart application
-jelastic restart
+# Clean up
+npm prune --production
+
+# Restart application via Jelastic dashboard or:
+pm2 restart all
 # Or use Jelastic dashboard to restart Node.js nodes
 ```
 

@@ -101,11 +101,14 @@
         "echo \"NEXT_TELEMETRY_DISABLED=1\" >> .env",
         "echo \"PORT=3000\" >> .env",
         "echo \"HOSTNAME=0.0.0.0\" >> .env",
-        "npm ci",
+        "npm cache clean --force",
+        "NODE_OPTIONS=\"--max-old-space-size=4096\" npm ci --omit=dev",
+        "npm install --save-dev typescript @types/node @types/react @types/react-dom esbuild tsx prisma",
         "npm run db:generate",
-        "npm run db:push",
-        "npm run db:seed || true",
-        "npm run build"
+        "npm run db:push --accept-data-loss",
+        "npm run db:seed || echo 'Seeding skipped or failed'",
+        "NODE_OPTIONS=\"--max-old-space-size=4096\" npm run build",
+        "npm prune --production"
       ]
     },
     {

@@ -59,19 +59,27 @@ PORT=3000
 HOSTNAME=0.0.0.0
 ```
 
-### 6. Run Setup Script
+### 6. Build Application
 SSH into Node.js server:
 ```bash
 cd /home/jelastic/ROOT
+
+# Run optimized build (avoids OOM kills)
+npm cache clean --force
+NODE_OPTIONS="--max-old-space-size=4096" npm ci --omit=dev
+npm install --save-dev typescript @types/node @types/react @types/react-dom esbuild tsx prisma
+npm run db:generate
+npx prisma db push --accept-data-loss
+npm run db:seed || echo "Seeding skipped"
+NODE_OPTIONS="--max-old-space-size=4096" npm run build
+npm prune --production
+```
+
+**Alternative**: Use the automated script:
+```bash
 bash jelastic-setup.sh
 ```
 
-This will:
-- Install dependencies
-- Generate Prisma client
-- Push database schema
-- Seed database
-- Build application
 
 ### 7. Configure Nginx
 1. Upload `nginx.conf` to Nginx node at `/etc/nginx/nginx.conf`

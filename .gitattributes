@@ -1,0 +1,17 @@
+# Ensure shell scripts always use LF line endings, even on Windows
+*.sh text eol=lf
+docker-entrypoint.sh text eol=lf
+jelastic-setup.sh text eol=lf
+validate-jelastic-config.sh text eol=lf
+
+# Ensure consistent line endings for other text files
+* text=auto
+*.ts text
+*.tsx text
+*.js text
+*.jsx text
+*.json text
+*.md text
+*.yml text
+*.yaml text
+*.prisma text
