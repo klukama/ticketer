@@ -6,6 +6,14 @@ import { notifications } from '@mantine/notifications'
 import { use, useState, useMemo } from 'react'
 import Link from 'next/link'
 
+interface Booking {
+  id: string
+  customerFirstName: string
+  customerLastName: string
+  sellerFirstName: string
+  sellerLastName: string
+}
+
 interface Seat {
   id: string
   eventId: string
@@ -15,6 +23,8 @@ interface Seat {
   status: 'AVAILABLE' | 'RESERVED' | 'BOOKED'
   bookedBy: string | null
   bookedAt: string | null
+  ticketNumber: string | null
+  booking: Booking | null
 }
 
 interface Event {

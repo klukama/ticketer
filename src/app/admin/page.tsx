@@ -19,6 +19,14 @@ interface Event {
   }
 }
 
+interface Booking {
+  id: string
+  customerFirstName: string
+  customerLastName: string
+  sellerFirstName: string
+  sellerLastName: string
+}
+
 interface Seat {
   id: string
   eventId: string
@@ -28,6 +36,8 @@ interface Seat {
   status: 'AVAILABLE' | 'RESERVED' | 'BOOKED'
   bookedBy: string | null
   bookedAt: string | null
+  ticketNumber: string | null
+  booking: Booking | null
 }
 
 interface EventWithSeats extends Event {
@@ -624,14 +634,23 @@ export default function AdminPage() {
                   <Table.Tr>
                     <Table.Th>Platz</Table.Th>
                     <Table.Th>Kundenname</Table.Th>
+                    <Table.Th>Verkäufer</Table.Th>
+                    <Table.Th>Ticketnummer</Table.Th>
                     <Table.Th>Gebucht am</Table.Th>
                   </Table.Tr>
                 </Table.Thead>
                 <Table.Tbody>
                   {bookedSeats.map((seat) => (
                     <Table.Tr key={seat.id}>
-                      <Table.Td>{seat.row}{seat.number}</Table.Td>
+                      <Table.Td>{seat.section} {seat.row}{seat.number}</Table.Td>
                       <Table.Td>{seat.bookedBy || 'N/A'}</Table.Td>
+                      <Table.Td>
+                        {seat.booking 
+                          ? `${seat.booking.sellerFirstName} ${seat.booking.sellerLastName}`
+                          : 'N/A'
+                        }
+                      </Table.Td>
+                      <Table.Td>{seat.ticketNumber || 'N/A'}</Table.Td>
                       <Table.Td>
                         {seat.bookedAt 
                           ? new Date(seat.bookedAt).toLocaleString('de-DE')
