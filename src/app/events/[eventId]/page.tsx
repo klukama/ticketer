@@ -6,6 +6,14 @@ import { notifications } from '@mantine/notifications'
 import { use, useState, useMemo } from 'react'
 import Link from 'next/link'
 
+interface Booking {
+  id: string
+  customerFirstName: string
+  customerLastName: string
+  sellerFirstName: string
+  sellerLastName: string
+}
+
 interface Seat {
   id: string
   eventId: string
@@ -15,6 +23,8 @@ interface Seat {
   status: 'AVAILABLE' | 'RESERVED' | 'BOOKED'
   bookedBy: string | null
   bookedAt: string | null
+  ticketNumber: string | null
+  booking: Booking | null
 }
 
 interface Event {
@@ -276,15 +286,9 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
           </Paper>
 
           <Group gap="md" mt="lg">
-            <Group gap="xs">
-              <Button size="xs" color="green" variant="light" disabled>Verfügbar</Button>
-            </Group>
-            <Group gap="xs">
-              <Button size="xs" color="blue" variant="filled" disabled>Ausgewählt</Button>
-            </Group>
-            <Group gap="xs">
-              <Button size="xs" color="red" variant="light" disabled>Gebucht</Button>
-            </Group>
+            <Button size="xs" color="green" variant="light" disabled>Verfügbar</Button>
+            <Button size="xs" color="blue" variant="filled" disabled>Ausgewählt</Button>
+            <Button size="xs" color="red" variant="light" disabled>Gebucht</Button>
           </Group>
         </Paper>
 

@@ -11,6 +11,9 @@ export async function GET(
       where: { id: eventId },
       include: {
         seats: {
+          include: {
+            booking: true
+          },
           orderBy: [
             { row: 'asc' },
             { number: 'asc' }
