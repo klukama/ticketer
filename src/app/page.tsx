@@ -30,16 +30,16 @@ export default function Home() {
   return (
     <Container size="lg" py="xl">
       <Group justify="space-between" mb="lg">
-        <Title order={1}>What&apos;s On</Title>
+        <Title order={1}>Veranstaltungen</Title>
         <Link href="/admin">
-          <Button variant="subtle" color="gray">Admin Panel</Button>
+          <Button variant="subtle" color="gray">Admin-Panel</Button>
         </Link>
       </Group>
       <Text size="lg" c="dimmed" mb="xl">
-        Browse upcoming events and book your seats
+        der Jugenkapelle Weitersfeld
       </Text>
 
-      {isLoading && <Text>Loading events...</Text>}
+      {isLoading && <Text>Veranstaltungen werden geladen...</Text>}
 
       <Stack gap="md">
         {events?.map((event) => (
@@ -63,11 +63,11 @@ export default function Home() {
 
             <Group justify="space-between" mt="md">
               <Text size="sm" c="dimmed">
-                {event.totalSeats} total seats
+                {event.totalSeats} Gesamtplätze
               </Text>
               <Link href={`/events/${event.id}`}>
                 <Button variant="filled" color="blue">
-                  View Seats
+                  Plätze anzeigen
                 </Button>
               </Link>
             </Group>
@@ -76,7 +76,7 @@ export default function Home() {
 
         {!isLoading && events?.length === 0 && (
           <Text c="dimmed" ta="center" py="xl">
-            No events available at the moment
+            Derzeit keine Veranstaltungen verfügbar
           </Text>
         )}
       </Stack>

@@ -87,15 +87,15 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
       setSellerLastName('')
       setTicketNumbers({})
       notifications.show({
-        title: 'Success!',
-        message: 'Your seats have been booked successfully.',
+        title: 'Erfolg!',
+        message: 'Ihre Plätze wurden erfolgreich gebucht.',
         color: 'green',
       })
     },
     onError: (error: Error) => {
       notifications.show({
-        title: 'Error',
-        message: error.message || 'Failed to book seats. Please try again.',
+        title: 'Fehler',
+        message: error.message || 'Buchung fehlgeschlagen. Bitte versuchen Sie es erneut.',
         color: 'red',
       })
     },
@@ -132,13 +132,13 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
     return !selectedSeats.some(seatId => !ticketNumbers[seatId]?.trim())
   }, [selectedSeats, ticketNumbers])
 
-  if (isLoading) return <Container size="lg" py="xl"><Text>Loading...</Text></Container>
-  if (!event) return <Container size="lg" py="xl"><Text>Event not found</Text></Container>
+  if (isLoading) return <Container size="lg" py="xl"><Text>Lädt...</Text></Container>
+  if (!event) return <Container size="lg" py="xl"><Text>Veranstaltung nicht gefunden</Text></Container>
 
   // Group seats by section and row
   const leftSeats = event.seats.filter(seat => seat.section === 'LEFT')
   const rightSeats = event.seats.filter(seat => seat.section === 'RIGHT')
-  const backSeats = event.seats.filter(seat => seat.section === 'BACK')
+  const backSeats = event.seats.filter(seat => seat.section === 'RANG')
 
   const groupByRow = (seats: Seat[]) => {
     return seats.reduce((acc, seat) => {
@@ -180,7 +180,7 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
 
       <Stack gap="xl">
         <Paper shadow="sm" p="md" radius="md" withBorder>
-          <Title order={2} size="h3" mb="md">Select Your Seats</Title>
+          <Title order={2} size="h3" mb="md">Wählen Sie Ihre Plätze</Title>
           
           <Stack gap="sm">
             {/* Back Section - Centered at the top */}
@@ -277,36 +277,36 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
 
           <Group gap="md" mt="lg">
             <Group gap="xs">
-              <Button size="xs" color="green" variant="light" disabled>Available</Button>
+              <Button size="xs" color="green" variant="light" disabled>Verfügbar</Button>
             </Group>
             <Group gap="xs">
-              <Button size="xs" color="blue" variant="filled" disabled>Selected</Button>
+              <Button size="xs" color="blue" variant="filled" disabled>Ausgewählt</Button>
             </Group>
             <Group gap="xs">
-              <Button size="xs" color="red" variant="light" disabled>Booked</Button>
+              <Button size="xs" color="red" variant="light" disabled>Gebucht</Button>
             </Group>
           </Group>
         </Paper>
 
         {selectedSeats.length > 0 && (
           <Paper shadow="sm" p="md" radius="md" withBorder>
-            <Title order={3} size="h4" mb="md">Complete Booking</Title>
-            <Text mb="md">Selected seats: {selectedSeats.length}</Text>
+            <Title order={3} size="h4" mb="md">Buchung abschließen</Title>
+            <Text mb="md">Ausgewählte Plätze: {selectedSeats.length}</Text>
             
             <Stack gap="md">
               <div>
-                <Title order={4} size="h5" mb="xs">Customer Information</Title>
+                <Title order={4} size="h5" mb="xs">Kundeninformationen</Title>
                 <Group grow>
                   <TextInput
-                    label="First Name"
-                    placeholder="Enter customer first name"
+                    label="Vorname"
+                    placeholder="Vorname des Kunden eingeben"
                     value={customerFirstName}
                     onChange={(e) => setCustomerFirstName(e.target.value)}
                     required
                   />
                   <TextInput
-                    label="Last Name"
-                    placeholder="Enter customer last name"
+                    label="Nachname"
+                    placeholder="Nachname des Kunden eingeben"
                     value={customerLastName}
                     onChange={(e) => setCustomerLastName(e.target.value)}
                     required
@@ -315,18 +315,18 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
               </div>
 
               <div>
-                <Title order={4} size="h5" mb="xs">Seller Information</Title>
+                <Title order={4} size="h5" mb="xs">Verkäuferinformationen</Title>
                 <Group grow>
                   <TextInput
-                    label="First Name"
-                    placeholder="Enter seller first name"
+                    label="Vorname"
+                    placeholder="Vorname des Verkäufers eingeben"
                     value={sellerFirstName}
                     onChange={(e) => setSellerFirstName(e.target.value)}
                     required
                   />
                   <TextInput
-                    label="Last Name"
-                    placeholder="Enter seller last name"
+                    label="Nachname"
+                    placeholder="Nachname des Verkäufers eingeben"
                     value={sellerLastName}
                     onChange={(e) => setSellerLastName(e.target.value)}
                     required
@@ -335,9 +335,9 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
               </div>
 
               <div>
-                <Title order={4} size="h5" mb="xs">Ticket Numbers</Title>
+                <Title order={4} size="h5" mb="xs">Ticketnummern</Title>
                 <Text size="sm" c="dimmed" mb="xs">
-                  Enter the existing ticket number for each selected seat
+                  Geben Sie die vorhandene Ticketnummer für jeden ausgewählten Platz ein
                 </Text>
                 <Stack gap="xs">
                   {selectedSeats.map((seatId, index) => {
@@ -347,7 +347,7 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
                       <TextInput
                         key={seatId}
                         label={seatLabel}
-                        placeholder="Enter ticket number"
+                        placeholder="Ticketnummer eingeben"
                         value={ticketNumbers[seatId] || ''}
                         onChange={(e) => setTicketNumbers(prev => ({
                           ...prev,
@@ -374,20 +374,20 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
                 }
                 loading={bookSeatsMutation.isPending}
               >
-                Book {selectedSeats.length} Seat{selectedSeats.length > 1 ? 's' : ''}
+                {selectedSeats.length} Platz{selectedSeats.length > 1 ? 'e' : ''} buchen
               </Button>
               <Button variant="light" onClick={() => {
                 setSelectedSeats([])
                 setTicketNumbers({})
               }}>
-                Clear Selection
+                Auswahl löschen
               </Button>
             </Group>
           </Paper>
         )}
 
         <Link href="/">
-          <Button variant="subtle">← Back to Events</Button>
+          <Button variant="subtle">← Zurück zu Veranstaltungen</Button>
         </Link>
       </Stack>
     </Container>
