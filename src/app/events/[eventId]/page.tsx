@@ -286,15 +286,9 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
           </Paper>
 
           <Group gap="md" mt="lg">
-            <Group gap="xs">
-              <Button size="xs" color="green" variant="light" disabled>Verfügbar</Button>
-            </Group>
-            <Group gap="xs">
-              <Button size="xs" color="blue" variant="filled" disabled>Ausgewählt</Button>
-            </Group>
-            <Group gap="xs">
-              <Button size="xs" color="red" variant="light" disabled>Gebucht</Button>
-            </Group>
+            <Button size="xs" color="green" variant="light" disabled>Verfügbar</Button>
+            <Button size="xs" color="blue" variant="filled" disabled>Ausgewählt</Button>
+            <Button size="xs" color="red" variant="light" disabled>Gebucht</Button>
           </Group>
         </Paper>
 
