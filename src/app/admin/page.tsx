@@ -372,7 +372,7 @@ export default function AdminPage() {
             
             <Group grow>
               <TextInput
-                label="Linke Sektion - Reihen"
+                label="Linke Seite - Reihen"
                 type="number"
                 min={1}
                 max={26}
@@ -381,7 +381,7 @@ export default function AdminPage() {
                 required
               />
               <TextInput
-                label="Linke Sektion - Spalten"
+                label="Linke Seite - Spalten"
                 type="number"
                 min={1}
                 value={formData.leftCols}
@@ -392,7 +392,7 @@ export default function AdminPage() {
             
             <Group grow>
               <TextInput
-                label="Rechte Sektion - Reihen"
+                label="Rechte Seite - Reihen"
                 type="number"
                 min={1}
                 max={26}
@@ -401,7 +401,7 @@ export default function AdminPage() {
                 required
               />
               <TextInput
-                label="Rechte Sektion - Spalten"
+                label="Rechte Seite - Spalten"
                 type="number"
                 min={1}
                 value={formData.rightCols}
@@ -412,7 +412,7 @@ export default function AdminPage() {
             
             <Group grow>
               <TextInput
-                label="Rang-Sektion - Reihen"
+                label="Rang - Reihen"
                 type="number"
                 min={0}
                 max={26}
@@ -420,7 +420,7 @@ export default function AdminPage() {
                 onChange={(e) => setFormData({ ...formData, backRows: Number(e.target.value) })}
               />
               <TextInput
-                label="Rang-Sektion - Spalten"
+                label="Rang - Spalten"
                 type="number"
                 min={0}
                 value={formData.backCols}

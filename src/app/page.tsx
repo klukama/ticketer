@@ -36,7 +36,7 @@ export default function Home() {
         </Link>
       </Group>
       <Text size="lg" c="dimmed" mb="xl">
-        Durchsuchen Sie bevorstehende Veranstaltungen und buchen Sie Ihre Plätze
+        der Jugenkapelle Weitersfeld
       </Text>
 
       {isLoading && <Text>Veranstaltungen werden geladen...</Text>}
@@ -67,7 +67,7 @@ export default function Home() {
               </Text>
               <Link href={`/events/${event.id}`}>
                 <Button variant="filled" color="blue">
-                  Plätze ansehen
+                  Plätze anzeigen
                 </Button>
               </Link>
             </Group>
