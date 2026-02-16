@@ -250,6 +250,16 @@ export default function AdminPage() {
     // CSV headers
     const headers = ['Platz', 'Kundenname', 'Verkäufer', 'Ticketnummer', 'Gebucht am']
     
+    // Helper function to properly escape CSV cells
+    const escapeCSVCell = (cell: string) => {
+      // Replace double quotes with two double quotes and wrap in quotes if necessary
+      const stringCell = String(cell)
+      if (stringCell.includes(',') || stringCell.includes('"') || stringCell.includes('\n') || stringCell.includes('\r')) {
+        return `"${stringCell.replace(/"/g, '""')}"`
+      }
+      return stringCell
+    }
+    
     // CSV rows
     const rows = bookedSeats.map(seat => [
       `${seat.section} ${seat.row}${seat.number}`,
@@ -265,20 +275,29 @@ export default function AdminPage() {
 
     // Combine headers and rows
     const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+      headers.map(escapeCSVCell).join(','),
+      ...rows.map(row => row.map(escapeCSVCell).join(','))
     ].join('\n')
 
     // Create blob and download
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
     const link = document.createElement('a')
     const url = URL.createObjectURL(blob)
+    
+    // Generate filename
+    const sanitizedTitle = bookingsEvent.title.replace(/[^a-z0-9]/gi, '-').toLowerCase()
+    const dateString = new Date().toISOString().split('T')[0]
+    const filename = `buchungen-${sanitizedTitle}-${dateString}.csv`
+    
     link.setAttribute('href', url)
-    link.setAttribute('download', `buchungen-${bookingsEvent.title.replace(/[^a-z0-9]/gi, '-').toLowerCase()}-${new Date().toISOString().split('T')[0]}.csv`)
+    link.setAttribute('download', filename)
     link.style.visibility = 'hidden'
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
+    
+    // Clean up the URL to prevent memory leaks
+    setTimeout(() => URL.revokeObjectURL(url), 100)
   }
 
   return (
