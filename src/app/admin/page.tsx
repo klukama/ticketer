@@ -244,6 +244,43 @@ export default function AdminPage() {
   const bookedSeats = bookingsEvent?.seats.filter(s => s.status === 'BOOKED') || []
   const currentDate = new Date()
 
+  const downloadCSV = () => {
+    if (!bookingsEvent || bookedSeats.length === 0) return
+
+    // CSV headers
+    const headers = ['Platz', 'Kundenname', 'Verkäufer', 'Ticketnummer', 'Gebucht am']
+    
+    // CSV rows
+    const rows = bookedSeats.map(seat => [
+      `${seat.section} ${seat.row}${seat.number}`,
+      seat.bookedBy || 'N/A',
+      seat.booking 
+        ? `${seat.booking.sellerFirstName} ${seat.booking.sellerLastName}`
+        : 'N/A',
+      seat.ticketNumber || 'N/A',
+      seat.bookedAt 
+        ? new Date(seat.bookedAt).toLocaleString('de-DE')
+        : 'N/A'
+    ])
+
+    // Combine headers and rows
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n')
+
+    // Create blob and download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    link.setAttribute('href', url)
+    link.setAttribute('download', `buchungen-${bookingsEvent.title.replace(/[^a-z0-9]/gi, '-').toLowerCase()}-${new Date().toISOString().split('T')[0]}.csv`)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
   return (
     <Container size="xl" py="xl">
       <Group justify="space-between" mb="xl" wrap="wrap" gap="sm">
@@ -476,20 +513,29 @@ export default function AdminPage() {
           <Stack gap="md">
             <Paper p="md" withBorder>
               <Group justify="space-between" wrap="wrap" gap="md">
-                <div>
-                  <Text size="sm" c="dimmed">Gesamtplätze</Text>
-                  <Text size="lg" fw={700}>{bookingsEvent.totalSeats}</Text>
-                </div>
-                <div>
-                  <Text size="sm" c="dimmed">Gebucht</Text>
-                  <Text size="lg" fw={700} c="red">{bookedSeats.length}</Text>
-                </div>
-                <div>
-                  <Text size="sm" c="dimmed">Verfügbar</Text>
-                  <Text size="lg" fw={700} c="green">
-                    {bookingsEvent.seats.filter(s => s.status === 'AVAILABLE').length}
-                  </Text>
-                </div>
+                <Group gap="md" wrap="wrap">
+                  <div>
+                    <Text size="sm" c="dimmed">Gesamtplätze</Text>
+                    <Text size="lg" fw={700}>{bookingsEvent.totalSeats}</Text>
+                  </div>
+                  <div>
+                    <Text size="sm" c="dimmed">Gebucht</Text>
+                    <Text size="lg" fw={700} c="red">{bookedSeats.length}</Text>
+                  </div>
+                  <div>
+                    <Text size="sm" c="dimmed">Verfügbar</Text>
+                    <Text size="lg" fw={700} c="green">
+                      {bookingsEvent.seats.filter(s => s.status === 'AVAILABLE').length}
+                    </Text>
+                  </div>
+                </Group>
+                <Button 
+                  onClick={downloadCSV} 
+                  disabled={bookedSeats.length === 0}
+                  variant="light"
+                >
+                  CSV herunterladen
+                </Button>
               </Group>
             </Paper>
 
@@ -518,9 +564,9 @@ export default function AdminPage() {
                                 key={seat.id}
                                 size="sm"
                                 color={seat.status === 'BOOKED' ? 'red' : seat.status === 'RESERVED' ? 'yellow' : 'green'}
-                                variant="light"
-                                disabled
-                                style={{ width: 50, minWidth: 40, flexShrink: 0 }}
+                                variant="filled"
+                                style={{ width: 50, minWidth: 40, flexShrink: 0, cursor: 'default' }}
+                                onClick={(e) => e.preventDefault()}
                               >
                                 {seat.number}
                               </Button>
@@ -567,9 +613,9 @@ export default function AdminPage() {
                               key={seat.id}
                               size="sm"
                               color={seat.status === 'BOOKED' ? 'red' : seat.status === 'RESERVED' ? 'yellow' : 'green'}
-                              variant="light"
-                              disabled
-                              style={{ width: 50, minWidth: 40, flexShrink: 0 }}
+                              variant="filled"
+                              style={{ width: 50, minWidth: 40, flexShrink: 0, cursor: 'default' }}
+                              onClick={(e) => e.preventDefault()}
                             >
                               {seat.number}
                             </Button>
@@ -588,9 +634,9 @@ export default function AdminPage() {
                               key={seat.id}
                               size="sm"
                               color={seat.status === 'BOOKED' ? 'red' : seat.status === 'RESERVED' ? 'yellow' : 'green'}
-                              variant="light"
-                              disabled
-                              style={{ width: 50, minWidth: 40, flexShrink: 0 }}
+                              variant="filled"
+                              style={{ width: 50, minWidth: 40, flexShrink: 0, cursor: 'default' }}
+                              onClick={(e) => e.preventDefault()}
                             >
                               {seat.number}
                             </Button>
@@ -619,9 +665,9 @@ export default function AdminPage() {
               </Paper>
 
               <Group gap="md" mt="lg" wrap="wrap">
-                <Button size="xs" color="green" variant="light" disabled>Verfügbar</Button>
-                <Button size="xs" color="yellow" variant="light" disabled>Reserviert</Button>
-                <Button size="xs" color="red" variant="light" disabled>Gebucht</Button>
+                <Button size="xs" color="green" variant="filled" style={{ cursor: 'default' }} onClick={(e) => e.preventDefault()}>Verfügbar</Button>
+                <Button size="xs" color="yellow" variant="filled" style={{ cursor: 'default' }} onClick={(e) => e.preventDefault()}>Reserviert</Button>
+                <Button size="xs" color="red" variant="filled" style={{ cursor: 'default' }} onClick={(e) => e.preventDefault()}>Gebucht</Button>
               </Group>
             </Paper>
 
