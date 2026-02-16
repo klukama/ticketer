@@ -174,7 +174,7 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
 
   return (
     <Container size="lg" py="xl">
-      <Group justify="space-between" mb="lg">
+      <Group justify="space-between" mb="lg" wrap="wrap" gap="sm">
         <div>
           <Title order={1}>{event.title}</Title>
           <Text c="dimmed" size="lg">{event.venue}</Text>
@@ -197,9 +197,9 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
             {backRows.length > 0 && (
               <>
                 {backRows.map((row) => (
-                  <Group key={`back-${row}`} gap="md" justify="center">
-                    <Text fw={700} w={30}>{row}</Text>
-                    <Group gap="xs">
+                  <Group key={`back-${row}`} gap="md" justify="center" wrap="wrap">
+                    <Text fw={700} w={30} style={{ flexShrink: 0 }}>{row}</Text>
+                    <Group gap="xs" wrap="wrap" justify="center">
                       {(backSeatsByRow[row] || []).sort((a, b) => a.number - b.number).map(seat => (
                         <Button
                           key={seat.id}
@@ -208,13 +208,13 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
                           variant={selectedSeats.includes(seat.id) ? 'filled' : 'light'}
                           onClick={() => toggleSeat(seat.id, seat.status)}
                           disabled={seat.status !== 'AVAILABLE'}
-                          style={{ width: 50 }}
+                          style={{ width: 50, minWidth: 40, flexShrink: 0 }}
                         >
                           {seat.number}
                         </Button>
                       ))}
                     </Group>
-                    <Text fw={700} w={30}>{row}</Text>
+                    <Text fw={700} w={30} style={{ flexShrink: 0 }}>{row}</Text>
                   </Group>
                 ))}
                 {/* Spacer between back section and main sections */}
@@ -223,11 +223,11 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
             )}
 
             {allRows.map((row) => (
-              <Group key={row} gap="md" justify="center" align="flex-start">
+              <Group key={row} gap="md" justify="center" align="flex-start" wrap="wrap">
                 {/* Left Section */}
-                <Group gap="xs" justify="flex-end" style={{ minWidth: '300px' }}>
-                  <Text fw={700} w={30}>{row}</Text>
-                  <Group gap="xs">
+                <Group gap="xs" justify="flex-end" style={{ minWidth: '150px', flex: '1 1 auto', maxWidth: '100%' }} wrap="wrap">
+                  <Text fw={700} w={30} style={{ flexShrink: 0 }}>{row}</Text>
+                  <Group gap="xs" wrap="wrap" justify="flex-end">
                     {(leftSeatsByRow[row] || []).sort((a, b) => a.number - b.number).map(seat => (
                       <Button
                         key={seat.id}
@@ -236,7 +236,7 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
                         variant={selectedSeats.includes(seat.id) ? 'filled' : 'light'}
                         onClick={() => toggleSeat(seat.id, seat.status)}
                         disabled={seat.status !== 'AVAILABLE'}
-                        style={{ width: 50 }}
+                        style={{ width: 50, minWidth: 40, flexShrink: 0 }}
                       >
                         {seat.number}
                       </Button>
@@ -245,11 +245,11 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
                 </Group>
 
                 {/* Aisle/Gap between sections */}
-                <div style={{ width: '60px' }} />
+                <div style={{ width: '20px', minWidth: '10px', flexShrink: 0 }} />
 
                 {/* Right Section */}
-                <Group gap="xs" justify="flex-start" style={{ minWidth: '300px' }}>
-                  <Group gap="xs">
+                <Group gap="xs" justify="flex-start" style={{ minWidth: '150px', flex: '1 1 auto', maxWidth: '100%' }} wrap="wrap">
+                  <Group gap="xs" wrap="wrap" justify="flex-start">
                     {(rightSeatsByRow[row] || []).sort((a, b) => a.number - b.number).map(seat => (
                       <Button
                         key={seat.id}
@@ -258,13 +258,13 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
                         variant={selectedSeats.includes(seat.id) ? 'filled' : 'light'}
                         onClick={() => toggleSeat(seat.id, seat.status)}
                         disabled={seat.status !== 'AVAILABLE'}
-                        style={{ width: 50 }}
+                        style={{ width: 50, minWidth: 40, flexShrink: 0 }}
                       >
                         {seat.number}
                       </Button>
                     ))}
                   </Group>
-                  <Text fw={700} w={30}>{row}</Text>
+                  <Text fw={700} w={30} style={{ flexShrink: 0 }}>{row}</Text>
                 </Group>
               </Group>
             ))}
@@ -285,7 +285,7 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
             Bühne
           </Paper>
 
-          <Group gap="md" mt="lg">
+          <Group gap="md" mt="lg" wrap="wrap">
             <Button size="xs" color="green" variant="light" disabled>Verfügbar</Button>
             <Button size="xs" color="blue" variant="filled" disabled>Ausgewählt</Button>
             <Button size="xs" color="red" variant="light" disabled>Gebucht</Button>
@@ -300,13 +300,14 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
             <Stack gap="md">
               <div>
                 <Title order={4} size="h5" mb="xs">Kundeninformationen</Title>
-                <Group grow>
+                <Group grow wrap="wrap">
                   <TextInput
                     label="Vorname"
                     placeholder="Vorname des Kunden eingeben"
                     value={customerFirstName}
                     onChange={(e) => setCustomerFirstName(e.target.value)}
                     required
+                    style={{ minWidth: '200px' }}
                   />
                   <TextInput
                     label="Nachname"
@@ -314,19 +315,21 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
                     value={customerLastName}
                     onChange={(e) => setCustomerLastName(e.target.value)}
                     required
+                    style={{ minWidth: '200px' }}
                   />
                 </Group>
               </div>
 
               <div>
                 <Title order={4} size="h5" mb="xs">Verkäuferinformationen</Title>
-                <Group grow>
+                <Group grow wrap="wrap">
                   <TextInput
                     label="Vorname"
                     placeholder="Vorname des Verkäufers eingeben"
                     value={sellerFirstName}
                     onChange={(e) => setSellerFirstName(e.target.value)}
                     required
+                    style={{ minWidth: '200px' }}
                   />
                   <TextInput
                     label="Nachname"
@@ -334,6 +337,7 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
                     value={sellerLastName}
                     onChange={(e) => setSellerLastName(e.target.value)}
                     required
+                    style={{ minWidth: '200px' }}
                   />
                 </Group>
               </div>
@@ -365,7 +369,7 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
               </div>
             </Stack>
 
-            <Group gap="md" mt="md">
+            <Group gap="md" mt="md" wrap="wrap">
               <Button
                 onClick={() => bookSeatsMutation.mutate()}
                 disabled={

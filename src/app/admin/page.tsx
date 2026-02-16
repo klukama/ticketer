@@ -246,12 +246,12 @@ export default function AdminPage() {
 
   return (
     <Container size="xl" py="xl">
-      <Group justify="space-between" mb="xl">
+      <Group justify="space-between" mb="xl" wrap="wrap" gap="sm">
         <div>
           <Title order={1}>Admin-Panel</Title>
           <Text c="dimmed">Veranstaltungen verwalten und Buchungen anzeigen</Text>
         </div>
-        <Group>
+        <Group wrap="wrap" gap="xs">
           <Link href="/">
             <Button variant="subtle">Öffentliche Seite anzeigen</Button>
           </Link>
@@ -270,9 +270,9 @@ export default function AdminPage() {
           
           return (
             <Card key={event.id} shadow="sm" padding="lg" radius="md" withBorder>
-              <Group justify="space-between" align="flex-start">
-                <div style={{ flex: 1 }}>
-                  <Group gap="sm" mb="xs">
+              <Group justify="space-between" align="flex-start" wrap="wrap" gap="md">
+                <div style={{ flex: 1, minWidth: '250px' }}>
+                  <Group gap="sm" mb="xs" wrap="wrap">
                     <Title order={3}>{event.title}</Title>
                     {isPast && (
                       <Badge color="gray" variant="light">Vergangene Veranstaltung</Badge>
@@ -298,7 +298,7 @@ export default function AdminPage() {
                   </Text>
                 </div>
 
-                <Group gap="xs">
+                <Group gap="xs" wrap="wrap">
                   <Button
                     variant="light"
                     color="blue"
@@ -475,7 +475,7 @@ export default function AdminPage() {
         {bookingsEvent && (
           <Stack gap="md">
             <Paper p="md" withBorder>
-              <Group justify="space-between">
+              <Group justify="space-between" wrap="wrap" gap="md">
                 <div>
                   <Text size="sm" c="dimmed">Gesamtplätze</Text>
                   <Text size="lg" fw={700}>{bookingsEvent.totalSeats}</Text>
@@ -510,23 +510,23 @@ export default function AdminPage() {
                   return backRows.length > 0 && (
                     <>
                       {backRows.map((row) => (
-                        <Group key={`back-${row}`} gap="md" justify="center">
-                          <Text fw={700} w={30}>{row}</Text>
-                          <Group gap="xs">
+                        <Group key={`back-${row}`} gap="md" justify="center" wrap="wrap">
+                          <Text fw={700} w={30} style={{ flexShrink: 0 }}>{row}</Text>
+                          <Group gap="xs" wrap="wrap" justify="center">
                             {(backSeatsByRow[row] || []).sort((a, b) => a.number - b.number).map(seat => (
                               <Button
                                 key={seat.id}
                                 size="sm"
-                                color={seat.status === 'BOOKED' ? 'red' : 'green'}
+                                color={seat.status === 'BOOKED' ? 'red' : seat.status === 'RESERVED' ? 'yellow' : 'green'}
                                 variant="light"
                                 disabled
-                                style={{ width: 50 }}
+                                style={{ width: 50, minWidth: 40, flexShrink: 0 }}
                               >
                                 {seat.number}
                               </Button>
                             ))}
                           </Group>
-                          <Text fw={700} w={30}>{row}</Text>
+                          <Text fw={700} w={30} style={{ flexShrink: 0 }}>{row}</Text>
                         </Group>
                       ))}
                       <div style={{ height: '20px' }} />
@@ -557,19 +557,19 @@ export default function AdminPage() {
                   ])).sort().reverse()
 
                   return allRows.map((row) => (
-                    <Group key={row} gap="md" justify="center" align="flex-start">
+                    <Group key={row} gap="md" justify="center" align="flex-start" wrap="wrap">
                       {/* Left Section */}
-                      <Group gap="xs" justify="flex-end" style={{ minWidth: '300px' }}>
-                        <Text fw={700} w={30}>{row}</Text>
-                        <Group gap="xs">
+                      <Group gap="xs" justify="flex-end" style={{ minWidth: '150px', flex: '1 1 auto', maxWidth: '100%' }} wrap="wrap">
+                        <Text fw={700} w={30} style={{ flexShrink: 0 }}>{row}</Text>
+                        <Group gap="xs" wrap="wrap" justify="flex-end">
                           {(leftSeatsByRow[row] || []).sort((a, b) => a.number - b.number).map(seat => (
                             <Button
                               key={seat.id}
                               size="sm"
-                              color={seat.status === 'BOOKED' ? 'red' : 'green'}
+                              color={seat.status === 'BOOKED' ? 'red' : seat.status === 'RESERVED' ? 'yellow' : 'green'}
                               variant="light"
                               disabled
-                              style={{ width: 50 }}
+                              style={{ width: 50, minWidth: 40, flexShrink: 0 }}
                             >
                               {seat.number}
                             </Button>
@@ -578,25 +578,25 @@ export default function AdminPage() {
                       </Group>
 
                       {/* Aisle/Gap between sections */}
-                      <div style={{ width: '60px' }} />
+                      <div style={{ width: '20px', minWidth: '10px', flexShrink: 0 }} />
 
                       {/* Right Section */}
-                      <Group gap="xs" justify="flex-start" style={{ minWidth: '300px' }}>
-                        <Group gap="xs">
+                      <Group gap="xs" justify="flex-start" style={{ minWidth: '150px', flex: '1 1 auto', maxWidth: '100%' }} wrap="wrap">
+                        <Group gap="xs" wrap="wrap" justify="flex-start">
                           {(rightSeatsByRow[row] || []).sort((a, b) => a.number - b.number).map(seat => (
                             <Button
                               key={seat.id}
                               size="sm"
-                              color={seat.status === 'BOOKED' ? 'red' : 'green'}
+                              color={seat.status === 'BOOKED' ? 'red' : seat.status === 'RESERVED' ? 'yellow' : 'green'}
                               variant="light"
                               disabled
-                              style={{ width: 50 }}
+                              style={{ width: 50, minWidth: 40, flexShrink: 0 }}
                             >
                               {seat.number}
                             </Button>
                           ))}
                         </Group>
-                        <Text fw={700} w={30}>{row}</Text>
+                        <Text fw={700} w={30} style={{ flexShrink: 0 }}>{row}</Text>
                       </Group>
                     </Group>
                   ))
@@ -618,8 +618,9 @@ export default function AdminPage() {
                 Bühne
               </Paper>
 
-              <Group gap="md" mt="lg">
+              <Group gap="md" mt="lg" wrap="wrap">
                 <Button size="xs" color="green" variant="light" disabled>Verfügbar</Button>
+                <Button size="xs" color="yellow" variant="light" disabled>Reserviert</Button>
                 <Button size="xs" color="red" variant="light" disabled>Gebucht</Button>
               </Group>
             </Paper>
