@@ -19,14 +19,11 @@ model Event {
   totalSeats  Int       @default(0)
   imageUrl    String?
   // Seating configuration
-  leftRows          Int       @default(6) // Number of rows in left section
-  leftCols          Int       @default(5) // Number of columns in left section
-  rightRows         Int       @default(6) // Number of rows in right section
-  rightCols         Int       @default(5) // Number of columns in right section
+  leftRows          Int       @default(6) // Number of rows in left/parkett section
   backRows          Int       @default(0) // Number of rows in back section
   backCols          Int       @default(0) // Number of columns in back section
   // Flexible seating configuration (new model)
-  seatsPerRow       Int       @default(0) // Total seats per row (0 = use old LEFT/RIGHT model)
+  seatsPerRow       Int       @default(0) // Total seats per row for flexible MAIN section (0 = use rowGroupConfigs)
   aisleAfterSeat    Int       @default(0) // Aisle after this seat number (0 = no aisle)
   backAisleAfterSeat Int      @default(0) // Aisle in back section row (0 = no aisle)
   rowGroupConfigs   String?   @db.Text // JSON array of row group configs: [{rows,seatsPerRow,aisleAfterSeat}]
@@ -42,7 +39,7 @@ model Seat {
   event        Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
   row          String
   number       Int
-  section      String    @default("LEFT") // LEFT, RIGHT, or RANG
+  section      String    @default("PARKETT") // PARKETT, MAIN, RANG, or legacy LEFT/RIGHT
   status       String    @default("AVAILABLE")
   bookedBy     String?
   bookedAt     DateTime?

@@ -50,9 +50,6 @@ interface EventWithSeats extends Event {
 
 interface EventWithConfig extends Event {
   leftRows: number
-  leftCols: number
-  rightRows: number
-  rightCols: number
   backRows: number
   backCols: number
   seatsPerRow: number

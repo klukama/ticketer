@@ -36,9 +36,6 @@ interface Event {
   date: string
   totalSeats: number
   leftRows: number
-  leftCols: number
-  rightRows: number
-  rightCols: number
   backRows: number
   backCols: number
   seatsPerRow: number
