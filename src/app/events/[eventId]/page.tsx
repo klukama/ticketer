@@ -384,11 +384,10 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
           </div>
 
           <Group gap="md" mt="sm" wrap="wrap">
-            <Button size="xs" color="green" variant="light" disabled>Verfügbar</Button>
-            <Button size="xs" color="blue" variant="filled" disabled>Ausgewählt</Button>
-            <Button size="xs" color="red" variant="light" disabled>Gebucht</Button>
+            <Button size="xs" color="green" variant="light">Verfügbar</Button>
+            <Button size="xs" color="blue" variant="filled">Ausgewählt</Button>
+            <Button size="xs" color="red" variant="light">Gebucht</Button>
           </Group>
-          <Text size="xs" c="dimmed" mt="xs">Tipp: Auf Mobilgeräten mit zwei Fingern zoomen. Am Desktop mit Strg+Mausrad zoomen.</Text>
         </Paper>
 
         {selectedSeats.length > 0 && (
