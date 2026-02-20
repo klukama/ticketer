@@ -3,7 +3,7 @@
 import { Container, Title, Text, Badge, Button, Group, Stack, Paper, TextInput } from '@mantine/core'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { notifications } from '@mantine/notifications'
-import { use, useState, useMemo } from 'react'
+import { use, useState, useMemo, useRef, useEffect } from 'react'
 import Link from 'next/link'
 
 interface Booking {
@@ -51,6 +51,64 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
   const [sellerFirstName, setSellerFirstName] = useState('')
   const [sellerLastName, setSellerLastName] = useState('')
   const [ticketNumbers, setTicketNumbers] = useState<Record<string, string>>({})
+  const MIN_ZOOM = 0.5
+  const MAX_ZOOM = 3
+  const ZOOM_STEP = 0.25
+
+  const [zoomScale, setZoomScale] = useState(1)
+  const seatMapContainerRef = useRef<HTMLDivElement>(null)
+  const lastTouchDistRef = useRef<number | null>(null)
+
+  useEffect(() => {
+    const container = seatMapContainerRef.current
+    if (!container) return
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        lastTouchDistRef.current = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        )
+      }
+    }
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (e.touches.length === 2 && lastTouchDistRef.current !== null) {
+        e.preventDefault()
+        const dist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        )
+        const delta = dist - lastTouchDistRef.current
+        setZoomScale(prev => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, prev + delta * 0.01)))
+        lastTouchDistRef.current = dist
+      }
+    }
+
+    const onTouchEnd = () => {
+      lastTouchDistRef.current = null
+    }
+
+    const onWheel = (e: WheelEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault()
+        setZoomScale(prev => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, prev - e.deltaY * 0.005)))
+      }
+    }
+
+    container.addEventListener('touchstart', onTouchStart, { passive: true })
+    container.addEventListener('touchmove', onTouchMove, { passive: false })
+    container.addEventListener('touchend', onTouchEnd)
+    container.addEventListener('wheel', onWheel, { passive: false })
+
+    return () => {
+      container.removeEventListener('touchstart', onTouchStart)
+      container.removeEventListener('touchmove', onTouchMove)
+      container.removeEventListener('touchend', onTouchEnd)
+      container.removeEventListener('wheel', onWheel)
+    }
+  }, [])
+
   const queryClient = useQueryClient()
 
   const { data: event, isLoading } = useQuery<Event>({
@@ -190,106 +248,147 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
 
       <Stack gap="xl">
         <Paper shadow="sm" p="md" radius="md" withBorder>
-          <Title order={2} size="h3" mb="md">Wählen Sie Ihre Plätze</Title>
-          
-          <Stack gap="sm">
-            {/* Back Section - Centered at the top */}
-            {backRows.length > 0 && (
-              <>
-                {backRows.map((row) => (
-                  <Group key={`back-${row}`} gap="md" justify="center" wrap="wrap">
-                    <Text fw={700} w={30} style={{ flexShrink: 0 }}>{row}</Text>
-                    <Group gap="xs" wrap="wrap" justify="center">
-                      {(backSeatsByRow[row] || []).sort((a, b) => a.number - b.number).map(seat => (
-                        <Button
-                          key={seat.id}
-                          size="sm"
-                          color={getSeatColor(seat)}
-                          variant={selectedSeats.includes(seat.id) ? 'filled' : 'light'}
-                          onClick={() => toggleSeat(seat.id, seat.status)}
-                          disabled={seat.status !== 'AVAILABLE'}
-                          style={{ width: 50, minWidth: 40, flexShrink: 0 }}
-                        >
-                          {seat.number}
-                        </Button>
-                      ))}
+          <Group justify="space-between" align="center" mb="md" wrap="wrap" gap="xs">
+            <Title order={2} size="h3">Wählen Sie Ihre Plätze</Title>
+            <Group gap="xs" align="center">
+              <Button
+                size="xs"
+                variant="default"
+                onClick={() => setZoomScale(prev => Math.max(MIN_ZOOM, prev - ZOOM_STEP))}
+                title="Verkleinern"
+                style={{ fontWeight: 700, fontSize: '1rem', minWidth: 32 }}
+              >−</Button>
+              <Text size="sm" ta="center" style={{ minWidth: 42 }}>{Math.round(zoomScale * 100)}%</Text>
+              <Button
+                size="xs"
+                variant="default"
+                onClick={() => setZoomScale(prev => Math.min(MAX_ZOOM, prev + ZOOM_STEP))}
+                title="Vergrößern"
+                style={{ fontWeight: 700, fontSize: '1rem', minWidth: 32 }}
+              >+</Button>
+              <Button
+                size="xs"
+                variant="subtle"
+                onClick={() => setZoomScale(1)}
+                title="Zoom zurücksetzen"
+              >Reset</Button>
+            </Group>
+          </Group>
+
+          {/* Scrollable zoomable seat map */}
+          <div
+            ref={seatMapContainerRef}
+            style={{
+              overflow: 'auto',
+              border: '1px solid #dee2e6',
+              borderRadius: '8px',
+              maxHeight: '60vh',
+              touchAction: 'pan-x pan-y',
+              WebkitOverflowScrolling: 'touch',
+            } as React.CSSProperties}
+          >
+            <div style={{ zoom: zoomScale, padding: '16px', minWidth: 'max-content' } as React.CSSProperties & { zoom: number }}>
+              <Stack gap="sm">
+                {/* Back Section - Centered at the top */}
+                {backRows.length > 0 && (
+                  <>
+                    {backRows.map((row) => (
+                      <Group key={`back-${row}`} gap="md" justify="center" wrap="nowrap">
+                        <Text fw={700} w={30} style={{ flexShrink: 0 }}>{row}</Text>
+                        <Group gap="xs" wrap="nowrap" justify="center">
+                          {(backSeatsByRow[row] || []).sort((a, b) => a.number - b.number).map(seat => (
+                            <Button
+                              key={seat.id}
+                              size="sm"
+                              color={getSeatColor(seat)}
+                              variant={selectedSeats.includes(seat.id) ? 'filled' : 'light'}
+                              onClick={() => toggleSeat(seat.id, seat.status)}
+                              disabled={seat.status !== 'AVAILABLE'}
+                              style={{ width: 50, minWidth: 40, flexShrink: 0 }}
+                            >
+                              {seat.number}
+                            </Button>
+                          ))}
+                        </Group>
+                        <Text fw={700} w={30} style={{ flexShrink: 0 }}>{row}</Text>
+                      </Group>
+                    ))}
+                    {/* Spacer between back section and main sections */}
+                    <div style={{ height: '20px' }} />
+                  </>
+                )}
+
+                {allRows.map((row) => (
+                  <Group key={row} gap="md" justify="center" align="flex-start" wrap="nowrap">
+                    {/* Left Section */}
+                    <Group gap="xs" justify="flex-end" style={{ flexShrink: 0 }} wrap="nowrap">
+                      <Text fw={700} w={30} style={{ flexShrink: 0 }}>{row}</Text>
+                      <Group gap="xs" wrap="nowrap" justify="flex-end">
+                        {(leftSeatsByRow[row] || []).sort((a, b) => a.number - b.number).map(seat => (
+                          <Button
+                            key={seat.id}
+                            size="sm"
+                            color={getSeatColor(seat)}
+                            variant={selectedSeats.includes(seat.id) ? 'filled' : 'light'}
+                            onClick={() => toggleSeat(seat.id, seat.status)}
+                            disabled={seat.status !== 'AVAILABLE'}
+                            style={{ width: 50, minWidth: 40, flexShrink: 0 }}
+                          >
+                            {seat.number}
+                          </Button>
+                        ))}
+                      </Group>
                     </Group>
-                    <Text fw={700} w={30} style={{ flexShrink: 0 }}>{row}</Text>
+
+                    {/* Aisle/Gap between sections */}
+                    <div style={{ width: '20px', flexShrink: 0 }} />
+
+                    {/* Right Section */}
+                    <Group gap="xs" justify="flex-start" style={{ flexShrink: 0 }} wrap="nowrap">
+                      <Group gap="xs" wrap="nowrap" justify="flex-start">
+                        {(rightSeatsByRow[row] || []).sort((a, b) => a.number - b.number).map(seat => (
+                          <Button
+                            key={seat.id}
+                            size="sm"
+                            color={getSeatColor(seat)}
+                            variant={selectedSeats.includes(seat.id) ? 'filled' : 'light'}
+                            onClick={() => toggleSeat(seat.id, seat.status)}
+                            disabled={seat.status !== 'AVAILABLE'}
+                            style={{ width: 50, minWidth: 40, flexShrink: 0 }}
+                          >
+                            {seat.number}
+                          </Button>
+                        ))}
+                      </Group>
+                      <Text fw={700} w={30} style={{ flexShrink: 0 }}>{row}</Text>
+                    </Group>
                   </Group>
                 ))}
-                {/* Spacer between back section and main sections */}
-                <div style={{ height: '20px' }} />
-              </>
-            )}
+              </Stack>
 
-            {allRows.map((row) => (
-              <Group key={row} gap="md" justify="center" align="flex-start" wrap="wrap">
-                {/* Left Section */}
-                <Group gap="xs" justify="flex-end" style={{ minWidth: '150px', flex: '1 1 auto', maxWidth: '100%' }} wrap="wrap">
-                  <Text fw={700} w={30} style={{ flexShrink: 0 }}>{row}</Text>
-                  <Group gap="xs" wrap="wrap" justify="flex-end">
-                    {(leftSeatsByRow[row] || []).sort((a, b) => a.number - b.number).map(seat => (
-                      <Button
-                        key={seat.id}
-                        size="sm"
-                        color={getSeatColor(seat)}
-                        variant={selectedSeats.includes(seat.id) ? 'filled' : 'light'}
-                        onClick={() => toggleSeat(seat.id, seat.status)}
-                        disabled={seat.status !== 'AVAILABLE'}
-                        style={{ width: 50, minWidth: 40, flexShrink: 0 }}
-                      >
-                        {seat.number}
-                      </Button>
-                    ))}
-                  </Group>
-                </Group>
+              {/* Stage */}
+              <Paper
+                mt="lg"
+                p="md"
+                ta="center"
+                style={{
+                  backgroundColor: '#adb5bd',
+                  color: '#fff',
+                  fontWeight: 700,
+                  fontSize: '1.2rem',
+                }}
+              >
+                Bühne
+              </Paper>
+            </div>
+          </div>
 
-                {/* Aisle/Gap between sections */}
-                <div style={{ width: '20px', minWidth: '10px', flexShrink: 0 }} />
-
-                {/* Right Section */}
-                <Group gap="xs" justify="flex-start" style={{ minWidth: '150px', flex: '1 1 auto', maxWidth: '100%' }} wrap="wrap">
-                  <Group gap="xs" wrap="wrap" justify="flex-start">
-                    {(rightSeatsByRow[row] || []).sort((a, b) => a.number - b.number).map(seat => (
-                      <Button
-                        key={seat.id}
-                        size="sm"
-                        color={getSeatColor(seat)}
-                        variant={selectedSeats.includes(seat.id) ? 'filled' : 'light'}
-                        onClick={() => toggleSeat(seat.id, seat.status)}
-                        disabled={seat.status !== 'AVAILABLE'}
-                        style={{ width: 50, minWidth: 40, flexShrink: 0 }}
-                      >
-                        {seat.number}
-                      </Button>
-                    ))}
-                  </Group>
-                  <Text fw={700} w={30} style={{ flexShrink: 0 }}>{row}</Text>
-                </Group>
-              </Group>
-            ))}
-          </Stack>
-
-          {/* Stage */}
-          <Paper 
-            mt="lg" 
-            p="md" 
-            ta="center"
-            style={{ 
-              backgroundColor: '#adb5bd',
-              color: '#fff',
-              fontWeight: 700,
-              fontSize: '1.2rem'
-            }}
-          >
-            Bühne
-          </Paper>
-
-          <Group gap="md" mt="lg" wrap="wrap">
+          <Group gap="md" mt="sm" wrap="wrap">
             <Button size="xs" color="green" variant="light" disabled>Verfügbar</Button>
             <Button size="xs" color="blue" variant="filled" disabled>Ausgewählt</Button>
             <Button size="xs" color="red" variant="light" disabled>Gebucht</Button>
           </Group>
+          <Text size="xs" c="dimmed" mt="xs">Tipp: Auf Mobilgeräten mit zwei Fingern zoomen. Am Desktop mit Strg+Mausrad zoomen.</Text>
         </Paper>
 
         {selectedSeats.length > 0 && (
