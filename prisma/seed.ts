@@ -19,9 +19,7 @@ async function main() {
       totalSeats: 120,
       imageUrl: null,
       leftRows: 6,
-      leftCols: 10,
-      rightRows: 6,
-      rightCols: 10,
+      rowGroupConfigs: JSON.stringify([{ rows: 6, seatsPerRow: 20, aisleAfterSeat: 10 }]),
     },
     {
       title: 'Comedy Night Special',
@@ -31,9 +29,7 @@ async function main() {
       totalSeats: 90,
       imageUrl: null,
       leftRows: 5,
-      leftCols: 9,
-      rightRows: 5,
-      rightCols: 9,
+      rowGroupConfigs: JSON.stringify([{ rows: 5, seatsPerRow: 18, aisleAfterSeat: 9 }]),
     },
     {
       title: 'Classical Orchestra Performance',
@@ -43,9 +39,10 @@ async function main() {
       totalSeats: 150,
       imageUrl: null,
       leftRows: 6,
-      leftCols: 12,
-      rightRows: 7,
-      rightCols: 13,
+      rowGroupConfigs: JSON.stringify([
+        { rows: 6, seatsPerRow: 20, aisleAfterSeat: 10 },
+        { rows: 1, seatsPerRow: 30, aisleAfterSeat: 15 },
+      ]),
     },
   ]
 
@@ -60,31 +57,21 @@ async function main() {
     const seats = []
     const getRowLabel = (index: number) => String.fromCharCode(65 + index) // 65 is 'A'
 
-    // Create left section seats
-    for (let rowIndex = 0; rowIndex < eventData.leftRows; rowIndex++) {
-      const row = getRowLabel(rowIndex)
-      for (let i = 1; i <= eventData.leftCols; i++) {
-        seats.push({
-          eventId: event.id,
-          row,
-          number: i,
-          section: 'LEFT',
-          status: 'AVAILABLE',
-        })
-      }
-    }
-
-    // Create right section seats
-    for (let rowIndex = 0; rowIndex < eventData.rightRows; rowIndex++) {
-      const row = getRowLabel(rowIndex)
-      for (let i = 1; i <= eventData.rightCols; i++) {
-        seats.push({
-          eventId: event.id,
-          row,
-          number: i,
-          section: 'RIGHT',
-          status: 'AVAILABLE',
-        })
+    // Create PARKETT section seats from rowGroupConfigs
+    const groups: Array<{ rows: number; seatsPerRow: number; aisleAfterSeat: number }> = JSON.parse(eventData.rowGroupConfigs)
+    let rowIndex = 0
+    for (const group of groups) {
+      for (let r = 0; r < group.rows; r++) {
+        const row = getRowLabel(rowIndex++)
+        for (let i = 1; i <= group.seatsPerRow; i++) {
+          seats.push({
+            eventId: event.id,
+            row,
+            number: i,
+            section: 'PARKETT',
+            status: 'AVAILABLE',
+          })
+        }
       }
     }
 

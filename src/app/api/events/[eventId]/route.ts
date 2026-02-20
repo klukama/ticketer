@@ -40,7 +40,7 @@ export async function PATCH(
   try {
     const { eventId } = await params
     const body = await request.json()
-    const { title, description, venue, date, totalSeats, imageUrl, leftRows, leftCols, rightRows, rightCols, backRows, backCols, seatsPerRow, aisleAfterSeat, backAisleAfterSeat, rowGroupConfigs } = body
+    const { title, description, venue, date, totalSeats, imageUrl, leftRows, backRows, backCols, seatsPerRow, aisleAfterSeat, backAisleAfterSeat, rowGroupConfigs } = body
 
     // Check if event exists
     const existingEvent = await prisma.event.findUnique({
@@ -81,9 +81,6 @@ export async function PATCH(
         ...(totalSeats !== undefined && { totalSeats }),
         ...(imageUrl !== undefined && { imageUrl }),
         ...(leftRows !== undefined && { leftRows }),
-        ...(leftCols !== undefined && { leftCols }),
-        ...(rightRows !== undefined && { rightRows }),
-        ...(rightCols !== undefined && { rightCols }),
         ...(backRows !== undefined && { backRows }),
         ...(backCols !== undefined && { backCols }),
         ...(seatsPerRow !== undefined && { seatsPerRow }),
