@@ -1,6 +1,7 @@
 'use client'
 
-import { Container, Title, Text, Card, Group, Badge, Button, Stack, Modal, TextInput, Textarea, Table, Paper } from '@mantine/core'
+import React from 'react'
+import { Container, Title, Text, Card, Group, Badge, Button, Stack, Modal, TextInput, Textarea, Table, Paper, Switch, Divider } from '@mantine/core'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { notifications } from '@mantine/notifications'
 import { useState } from 'react'
@@ -42,6 +43,9 @@ interface Seat {
 
 interface EventWithSeats extends Event {
   seats: Seat[]
+  seatsPerRow?: number
+  aisleAfterSeat?: number
+  backAisleAfterSeat?: number
 }
 
 interface EventWithConfig extends Event {
@@ -51,6 +55,9 @@ interface EventWithConfig extends Event {
   rightCols: number
   backRows: number
   backCols: number
+  seatsPerRow: number
+  aisleAfterSeat: number
+  backAisleAfterSeat: number
 }
 
 export default function AdminPage() {
@@ -69,6 +76,12 @@ export default function AdminPage() {
     rightCols: 5,
     backRows: 0,
     backCols: 0,
+    seatsPerRow: 10,
+    aisleAfterSeat: 5,
+    backAisleAfterSeat: 0,
+    useFlexibleLayout: true,
+    hasAisle: true,
+    backHasAisle: false,
   })
 
   const queryClient = useQueryClient()
@@ -94,14 +107,47 @@ export default function AdminPage() {
 
   const createEventMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
-      const totalSeats = data.leftRows * data.leftCols + data.rightRows * data.rightCols + data.backRows * data.backCols
+      let totalSeats: number
+      let payload: Record<string, unknown>
+
+      if (data.useFlexibleLayout) {
+        // In flexible layout, leftRows stores the total number of main section rows
+        totalSeats = data.leftRows * data.seatsPerRow + data.backRows * data.backCols
+        payload = {
+          title: data.title,
+          description: data.description,
+          venue: data.venue,
+          date: data.date,
+          totalSeats,
+          leftRows: data.leftRows,
+          seatsPerRow: data.seatsPerRow,
+          aisleAfterSeat: data.hasAisle ? data.aisleAfterSeat : 0,
+          backRows: data.backRows,
+          backCols: data.backCols,
+          backAisleAfterSeat: data.backHasAisle ? data.backAisleAfterSeat : 0,
+        }
+      } else {
+        totalSeats = data.leftRows * data.leftCols + data.rightRows * data.rightCols + data.backRows * data.backCols
+        payload = {
+          title: data.title,
+          description: data.description,
+          venue: data.venue,
+          date: data.date,
+          totalSeats,
+          leftRows: data.leftRows,
+          leftCols: data.leftCols,
+          rightRows: data.rightRows,
+          rightCols: data.rightCols,
+          backRows: data.backRows,
+          backCols: data.backCols,
+          seatsPerRow: 0,
+        }
+      }
+
       const res = await fetch('/api/events', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...data,
-          totalSeats,
-        }),
+        body: JSON.stringify(payload),
       })
       if (!res.ok) throw new Error('Failed to create event')
       return res.json()
@@ -127,14 +173,46 @@ export default function AdminPage() {
 
   const updateEventMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: typeof formData }) => {
-      const totalSeats = data.leftRows * data.leftCols + data.rightRows * data.rightCols + data.backRows * data.backCols
+      let totalSeats: number
+      let payload: Record<string, unknown>
+
+      if (data.useFlexibleLayout) {
+        totalSeats = data.leftRows * data.seatsPerRow + data.backRows * data.backCols
+        payload = {
+          title: data.title,
+          description: data.description,
+          venue: data.venue,
+          date: data.date,
+          totalSeats,
+          leftRows: data.leftRows,
+          seatsPerRow: data.seatsPerRow,
+          aisleAfterSeat: data.hasAisle ? data.aisleAfterSeat : 0,
+          backRows: data.backRows,
+          backCols: data.backCols,
+          backAisleAfterSeat: data.backHasAisle ? data.backAisleAfterSeat : 0,
+        }
+      } else {
+        totalSeats = data.leftRows * data.leftCols + data.rightRows * data.rightCols + data.backRows * data.backCols
+        payload = {
+          title: data.title,
+          description: data.description,
+          venue: data.venue,
+          date: data.date,
+          totalSeats,
+          leftRows: data.leftRows,
+          leftCols: data.leftCols,
+          rightRows: data.rightRows,
+          rightCols: data.rightCols,
+          backRows: data.backRows,
+          backCols: data.backCols,
+          seatsPerRow: 0,
+        }
+      }
+
       const res = await fetch(`/api/events/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...data,
-          totalSeats,
-        }),
+        body: JSON.stringify(payload),
       })
       if (!res.ok) throw new Error('Failed to update event')
       return res.json()
@@ -196,6 +274,12 @@ export default function AdminPage() {
       rightCols: 5,
       backRows: 0,
       backCols: 0,
+      seatsPerRow: 10,
+      aisleAfterSeat: 5,
+      backAisleAfterSeat: 0,
+      useFlexibleLayout: true,
+      hasAisle: true,
+      backHasAisle: false,
     })
   }
 
@@ -222,6 +306,13 @@ export default function AdminPage() {
       rightCols: eventWithConfig.rightCols || 5,
       backRows: eventWithConfig.backRows || 0,
       backCols: eventWithConfig.backCols || 0,
+      seatsPerRow: eventWithConfig.seatsPerRow || 10,
+      aisleAfterSeat: eventWithConfig.aisleAfterSeat || 5,
+      backAisleAfterSeat: eventWithConfig.backAisleAfterSeat || 0,
+      useFlexibleLayout: (eventWithConfig.seatsPerRow || 0) > 0,
+      // aisleAfterSeat = 0 means no aisle (seat numbers start at 1, so 0 is never a valid position)
+      hasAisle: (eventWithConfig.aisleAfterSeat || 0) > 0,
+      backHasAisle: (eventWithConfig.backAisleAfterSeat || 0) > 0,
     })
     setEditModalOpen(true)
   }
@@ -435,68 +526,165 @@ export default function AdminPage() {
             />
             
             <Title order={4} size="h5" mt="md">Sitzplatzkonfiguration</Title>
-            
-            <Group grow>
-              <TextInput
-                label="Linke Seite - Reihen"
-                type="number"
-                min={1}
-                max={26}
-                value={formData.leftRows}
-                onChange={(e) => setFormData({ ...formData, leftRows: Number(e.target.value) })}
-                required
-              />
-              <TextInput
-                label="Linke Seite - Spalten"
-                type="number"
-                min={1}
-                value={formData.leftCols}
-                onChange={(e) => setFormData({ ...formData, leftCols: Number(e.target.value) })}
-                required
-              />
-            </Group>
-            
-            <Group grow>
-              <TextInput
-                label="Rechte Seite - Reihen"
-                type="number"
-                min={1}
-                max={26}
-                value={formData.rightRows}
-                onChange={(e) => setFormData({ ...formData, rightRows: Number(e.target.value) })}
-                required
-              />
-              <TextInput
-                label="Rechte Seite - Spalten"
-                type="number"
-                min={1}
-                value={formData.rightCols}
-                onChange={(e) => setFormData({ ...formData, rightCols: Number(e.target.value) })}
-                required
-              />
-            </Group>
-            
-            <Group grow>
-              <TextInput
-                label="Rang - Reihen"
-                type="number"
-                min={0}
-                max={26}
-                value={formData.backRows}
-                onChange={(e) => setFormData({ ...formData, backRows: Number(e.target.value) })}
-              />
-              <TextInput
-                label="Rang - Spalten"
-                type="number"
-                min={0}
-                value={formData.backCols}
-                onChange={(e) => setFormData({ ...formData, backCols: Number(e.target.value) })}
-              />
-            </Group>
-            
-            <Text size="sm" c="dimmed">
-              Gesamtplätze werden automatisch berechnet: (Linke Reihen × Linke Spalten) + (Rechte Reihen × Rechte Spalten) + (Rang-Reihen × Rang-Spalten) = {formData.leftRows * formData.leftCols + formData.rightRows * formData.rightCols + formData.backRows * formData.backCols} Plätze
-            </Text>
+
+            <Switch
+              label="Flexibles Layout (empfohlen)"
+              description="Reihen werden mit konfigurierbarem Gang zentriert dargestellt"
+              checked={formData.useFlexibleLayout}
+              onChange={(e) => setFormData({ ...formData, useFlexibleLayout: e.currentTarget.checked })}
+            />
+
+            {formData.useFlexibleLayout ? (
+              <>
+                <Group grow>
+                  <TextInput
+                    label="Anzahl Reihen"
+                    type="number"
+                    min={1}
+                    max={26}
+                    value={formData.leftRows}
+                    onChange={(e) => setFormData({ ...formData, leftRows: Number(e.target.value) })}
+                    required
+                  />
+                  <TextInput
+                    label="Sitze pro Reihe"
+                    type="number"
+                    min={1}
+                    value={formData.seatsPerRow}
+                    onChange={(e) => setFormData({ ...formData, seatsPerRow: Number(e.target.value) })}
+                    required
+                  />
+                </Group>
+
+                <Switch
+                  label="Gang vorhanden"
+                  checked={formData.hasAisle}
+                  onChange={(e) => setFormData({ ...formData, hasAisle: e.currentTarget.checked })}
+                />
+
+                {formData.hasAisle && (
+                  <TextInput
+                    label="Gang nach Sitz Nr."
+                    description="Gang wird nach diesem Sitz eingefügt (z.B. 5 → Sitze 1–5 | Gang | 6–…)"
+                    type="number"
+                    min={1}
+                    max={formData.seatsPerRow - 1}
+                    value={formData.aisleAfterSeat}
+                    onChange={(e) => setFormData({ ...formData, aisleAfterSeat: Number(e.target.value) })}
+                    required
+                  />
+                )}
+
+                <Divider label="Rang (optional)" labelPosition="center" />
+
+                <Group grow>
+                  <TextInput
+                    label="Rang - Reihen"
+                    type="number"
+                    min={0}
+                    max={26}
+                    value={formData.backRows}
+                    onChange={(e) => setFormData({ ...formData, backRows: Number(e.target.value) })}
+                  />
+                  <TextInput
+                    label="Rang - Sitze pro Reihe"
+                    type="number"
+                    min={0}
+                    value={formData.backCols}
+                    onChange={(e) => setFormData({ ...formData, backCols: Number(e.target.value) })}
+                  />
+                </Group>
+
+                {formData.backRows > 0 && (
+                  <>
+                    <Switch
+                      label="Gang im Rang vorhanden"
+                      checked={formData.backHasAisle}
+                      onChange={(e) => setFormData({ ...formData, backHasAisle: e.currentTarget.checked })}
+                    />
+                    {formData.backHasAisle && (
+                      <TextInput
+                        label="Rang-Gang nach Sitz Nr."
+                        type="number"
+                        min={1}
+                        max={formData.backCols - 1}
+                        value={formData.backAisleAfterSeat}
+                        onChange={(e) => setFormData({ ...formData, backAisleAfterSeat: Number(e.target.value) })}
+                        required
+                      />
+                    )}
+                  </>
+                )}
+
+                <Text size="sm" c="dimmed">
+                  Gesamtplätze: {formData.leftRows * formData.seatsPerRow + formData.backRows * formData.backCols} Plätze
+                </Text>
+              </>
+            ) : (
+              <>
+                <Group grow>
+                  <TextInput
+                    label="Linke Seite - Reihen"
+                    type="number"
+                    min={1}
+                    max={26}
+                    value={formData.leftRows}
+                    onChange={(e) => setFormData({ ...formData, leftRows: Number(e.target.value) })}
+                    required
+                  />
+                  <TextInput
+                    label="Linke Seite - Spalten"
+                    type="number"
+                    min={1}
+                    value={formData.leftCols}
+                    onChange={(e) => setFormData({ ...formData, leftCols: Number(e.target.value) })}
+                    required
+                  />
+                </Group>
+
+                <Group grow>
+                  <TextInput
+                    label="Rechte Seite - Reihen"
+                    type="number"
+                    min={1}
+                    max={26}
+                    value={formData.rightRows}
+                    onChange={(e) => setFormData({ ...formData, rightRows: Number(e.target.value) })}
+                    required
+                  />
+                  <TextInput
+                    label="Rechte Seite - Spalten"
+                    type="number"
+                    min={1}
+                    value={formData.rightCols}
+                    onChange={(e) => setFormData({ ...formData, rightCols: Number(e.target.value) })}
+                    required
+                  />
+                </Group>
+
+                <Group grow>
+                  <TextInput
+                    label="Rang - Reihen"
+                    type="number"
+                    min={0}
+                    max={26}
+                    value={formData.backRows}
+                    onChange={(e) => setFormData({ ...formData, backRows: Number(e.target.value) })}
+                  />
+                  <TextInput
+                    label="Rang - Spalten"
+                    type="number"
+                    min={0}
+                    value={formData.backCols}
+                    onChange={(e) => setFormData({ ...formData, backCols: Number(e.target.value) })}
+                  />
+                </Group>
+
+                <Text size="sm" c="dimmed">
+                  Gesamtplätze: (Linke Reihen × Linke Spalten) + (Rechte Reihen × Rechte Spalten) + (Rang-Reihen × Rang-Spalten) = {formData.leftRows * formData.leftCols + formData.rightRows * formData.rightCols + formData.backRows * formData.backCols} Plätze
+                </Text>
+              </>
+            )}
             
             <Group justify="flex-end" gap="xs">
               <Button
@@ -571,6 +759,20 @@ export default function AdminPage() {
                     return acc
                   }, {} as Record<string, typeof backSeats>)
                   const backRows = Object.keys(backSeatsByRow).sort().reverse()
+                  const backAisle = bookingsEvent.backAisleAfterSeat || 0
+
+                  const seatBtn = (seat: typeof backSeats[0]) => (
+                    <Button
+                      key={seat.id}
+                      size="sm"
+                      color={seat.status === 'BOOKED' ? 'red' : seat.status === 'RESERVED' ? 'yellow' : 'green'}
+                      variant="filled"
+                      style={{ width: 50, minWidth: 40, flexShrink: 0, cursor: 'default' }}
+                      onClick={(e) => e.preventDefault()}
+                    >
+                      {seat.number}
+                    </Button>
+                  )
                   
                   return backRows.length > 0 && (
                     <>
@@ -579,16 +781,12 @@ export default function AdminPage() {
                           <Text fw={700} w={30} style={{ flexShrink: 0 }}>{row}</Text>
                           <Group gap="xs" wrap="wrap" justify="center">
                             {(backSeatsByRow[row] || []).sort((a, b) => a.number - b.number).map(seat => (
-                              <Button
-                                key={seat.id}
-                                size="sm"
-                                color={seat.status === 'BOOKED' ? 'red' : seat.status === 'RESERVED' ? 'yellow' : 'green'}
-                                variant="filled"
-                                style={{ width: 50, minWidth: 40, flexShrink: 0, cursor: 'default' }}
-                                onClick={(e) => e.preventDefault()}
-                              >
-                                {seat.number}
-                              </Button>
+                              <React.Fragment key={seat.id}>
+                                {seatBtn(seat)}
+                                {backAisle > 0 && seat.number === backAisle && (
+                                  <div style={{ width: '20px', flexShrink: 0 }} />
+                                )}
+                              </React.Fragment>
                             ))}
                           </Group>
                           <Text fw={700} w={30} style={{ flexShrink: 0 }}>{row}</Text>
@@ -599,11 +797,54 @@ export default function AdminPage() {
                   )
                 })()}
 
-                {/* Main sections (Left and Right) */}
+                {/* Main sections */}
                 {(() => {
+                  const mainSeats = bookingsEvent.seats.filter(seat => seat.section === 'MAIN')
                   const leftSeats = bookingsEvent.seats.filter(seat => seat.section === 'LEFT')
                   const rightSeats = bookingsEvent.seats.filter(seat => seat.section === 'RIGHT')
-                  
+                  const isFlexible = mainSeats.length > 0
+                  const mainAisle = bookingsEvent.aisleAfterSeat || 0
+
+                  const seatBtn = (seat: typeof mainSeats[0]) => (
+                    <Button
+                      key={seat.id}
+                      size="sm"
+                      color={seat.status === 'BOOKED' ? 'red' : seat.status === 'RESERVED' ? 'yellow' : 'green'}
+                      variant="filled"
+                      style={{ width: 50, minWidth: 40, flexShrink: 0, cursor: 'default' }}
+                      onClick={(e) => e.preventDefault()}
+                    >
+                      {seat.number}
+                    </Button>
+                  )
+
+                  if (isFlexible) {
+                    const mainSeatsByRow = mainSeats.reduce((acc, seat) => {
+                      if (!acc[seat.row]) acc[seat.row] = []
+                      acc[seat.row].push(seat)
+                      return acc
+                    }, {} as Record<string, typeof mainSeats>)
+                    const mainRows = Object.keys(mainSeatsByRow).sort().reverse()
+
+                    return mainRows.map((row) => (
+                      <Group key={row} gap="md" justify="center" wrap="nowrap">
+                        <Text fw={700} w={30} style={{ flexShrink: 0 }}>{row}</Text>
+                        <Group gap="xs" wrap="nowrap" justify="center">
+                          {(mainSeatsByRow[row] || []).sort((a, b) => a.number - b.number).map(seat => (
+                            <React.Fragment key={seat.id}>
+                              {seatBtn(seat)}
+                              {mainAisle > 0 && seat.number === mainAisle && (
+                                <div style={{ width: '20px', flexShrink: 0 }} />
+                              )}
+                            </React.Fragment>
+                          ))}
+                        </Group>
+                        <Text fw={700} w={30} style={{ flexShrink: 0 }}>{row}</Text>
+                      </Group>
+                    ))
+                  }
+
+                  // Legacy LEFT/RIGHT layout
                   const leftSeatsByRow = leftSeats.reduce((acc, seat) => {
                     if (!acc[seat.row]) acc[seat.row] = []
                     acc[seat.row].push(seat)
@@ -627,18 +868,7 @@ export default function AdminPage() {
                       <Group gap="xs" justify="flex-end" style={{ minWidth: '150px', flex: '1 1 auto', maxWidth: '100%' }} wrap="wrap">
                         <Text fw={700} w={30} style={{ flexShrink: 0 }}>{row}</Text>
                         <Group gap="xs" wrap="wrap" justify="flex-end">
-                          {(leftSeatsByRow[row] || []).sort((a, b) => a.number - b.number).map(seat => (
-                            <Button
-                              key={seat.id}
-                              size="sm"
-                              color={seat.status === 'BOOKED' ? 'red' : seat.status === 'RESERVED' ? 'yellow' : 'green'}
-                              variant="filled"
-                              style={{ width: 50, minWidth: 40, flexShrink: 0, cursor: 'default' }}
-                              onClick={(e) => e.preventDefault()}
-                            >
-                              {seat.number}
-                            </Button>
-                          ))}
+                          {(leftSeatsByRow[row] || []).sort((a, b) => a.number - b.number).map(seat => seatBtn(seat))}
                         </Group>
                       </Group>
 
@@ -648,18 +878,7 @@ export default function AdminPage() {
                       {/* Right Section */}
                       <Group gap="xs" justify="flex-start" style={{ minWidth: '150px', flex: '1 1 auto', maxWidth: '100%' }} wrap="wrap">
                         <Group gap="xs" wrap="wrap" justify="flex-start">
-                          {(rightSeatsByRow[row] || []).sort((a, b) => a.number - b.number).map(seat => (
-                            <Button
-                              key={seat.id}
-                              size="sm"
-                              color={seat.status === 'BOOKED' ? 'red' : seat.status === 'RESERVED' ? 'yellow' : 'green'}
-                              variant="filled"
-                              style={{ width: 50, minWidth: 40, flexShrink: 0, cursor: 'default' }}
-                              onClick={(e) => e.preventDefault()}
-                            >
-                              {seat.number}
-                            </Button>
-                          ))}
+                          {(rightSeatsByRow[row] || []).sort((a, b) => a.number - b.number).map(seat => seatBtn(seat))}
                         </Group>
                         <Text fw={700} w={30} style={{ flexShrink: 0 }}>{row}</Text>
                       </Group>

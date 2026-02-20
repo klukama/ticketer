@@ -21,7 +21,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { title, description, venue, date, totalSeats, imageUrl, leftRows, leftCols, rightRows, rightCols, backRows, backCols } = body
+    const { title, description, venue, date, totalSeats, imageUrl, leftRows, leftCols, rightRows, rightCols, backRows, backCols, seatsPerRow, aisleAfterSeat, backAisleAfterSeat } = body
 
     // Validate required fields
     if (!title || !venue || !date || !totalSeats) {
@@ -47,6 +47,9 @@ export async function POST(request: Request) {
       { name: 'rightCols', value: rightCols },
       { name: 'backRows', value: backRows },
       { name: 'backCols', value: backCols },
+      { name: 'seatsPerRow', value: seatsPerRow },
+      { name: 'aisleAfterSeat', value: aisleAfterSeat },
+      { name: 'backAisleAfterSeat', value: backAisleAfterSeat },
     ]
 
     for (const field of seatingFields) {
@@ -75,6 +78,12 @@ export async function POST(request: Request) {
       backRows !== undefined && backRows !== null ? Number(backRows) : 0
     const backColsCount =
       backCols !== undefined && backCols !== null ? Number(backCols) : 0
+    const seatsPerRowCount =
+      seatsPerRow !== undefined && seatsPerRow !== null ? Number(seatsPerRow) : 0
+    const aisleAfterSeatCount =
+      aisleAfterSeat !== undefined && aisleAfterSeat !== null ? Number(aisleAfterSeat) : 0
+    const backAisleAfterSeatCount =
+      backAisleAfterSeat !== undefined && backAisleAfterSeat !== null ? Number(backAisleAfterSeat) : 0
 
     // Use transaction to ensure atomicity
     const event = await prisma.$transaction(async (tx) => {
@@ -92,6 +101,9 @@ export async function POST(request: Request) {
           rightCols: rightColsCount,
           backRows: backRowsCount,
           backCols: backColsCount,
+          seatsPerRow: seatsPerRowCount,
+          aisleAfterSeat: aisleAfterSeatCount,
+          backAisleAfterSeat: backAisleAfterSeatCount,
         },
       })
 
@@ -101,31 +113,50 @@ export async function POST(request: Request) {
       // Generate row labels (A, B, C, ...)
       const getRowLabel = (index: number) => String.fromCharCode(65 + index) // 65 is 'A'
 
-      // Create left section seats
-      for (let rowIndex = 0; rowIndex < leftRowsCount; rowIndex++) {
-        const row = getRowLabel(rowIndex)
-        for (let i = 1; i <= leftColsCount; i++) {
-          seats.push({
-            eventId: newEvent.id,
-            row,
-            number: i,
-            section: 'LEFT',
-            status: 'AVAILABLE',
-          })
+      if (seatsPerRowCount > 0) {
+        // New flexible model: single MAIN section
+        // leftRowsCount stores the total number of rows for the main section in flexible mode
+        const mainRowsCount = leftRowsCount
+        for (let rowIndex = 0; rowIndex < mainRowsCount; rowIndex++) {
+          const row = getRowLabel(rowIndex)
+          for (let i = 1; i <= seatsPerRowCount; i++) {
+            seats.push({
+              eventId: newEvent.id,
+              row,
+              number: i,
+              section: 'MAIN',
+              status: 'AVAILABLE',
+            })
+          }
         }
-      }
+      } else {
+        // Legacy model: LEFT and RIGHT sections
+        // Create left section seats
+        for (let rowIndex = 0; rowIndex < leftRowsCount; rowIndex++) {
+          const row = getRowLabel(rowIndex)
+          for (let i = 1; i <= leftColsCount; i++) {
+            seats.push({
+              eventId: newEvent.id,
+              row,
+              number: i,
+              section: 'LEFT',
+              status: 'AVAILABLE',
+            })
+          }
+        }
 
-      // Create right section seats
-      for (let rowIndex = 0; rowIndex < rightRowsCount; rowIndex++) {
-        const row = getRowLabel(rowIndex)
-        for (let i = 1; i <= rightColsCount; i++) {
-          seats.push({
-            eventId: newEvent.id,
-            row,
-            number: i,
-            section: 'RIGHT',
-            status: 'AVAILABLE',
-          })
+        // Create right section seats
+        for (let rowIndex = 0; rowIndex < rightRowsCount; rowIndex++) {
+          const row = getRowLabel(rowIndex)
+          for (let i = 1; i <= rightColsCount; i++) {
+            seats.push({
+              eventId: newEvent.id,
+              row,
+              number: i,
+              section: 'RIGHT',
+              status: 'AVAILABLE',
+            })
+          }
         }
       }
 
