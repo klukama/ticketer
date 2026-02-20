@@ -190,7 +190,7 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
 
   const getSeatColor = (seat: Seat) => {
     if (selectedSeats.includes(seat.id)) return 'blue'
-    if (seat.status === 'BOOKED') return 'red'
+    if (seat.status === 'BOOKED') return 'gray'
     if (seat.status === 'RESERVED') return 'yellow'
     return 'green'
   }
@@ -386,7 +386,7 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
           <Group gap="md" mt="sm" wrap="wrap">
             <Button size="xs" color="green" variant="light">Verfügbar</Button>
             <Button size="xs" color="blue" variant="filled">Ausgewählt</Button>
-            <Button size="xs" color="red" variant="light">Gebucht</Button>
+            <Button size="xs" color="gray" variant="light" disabled>Gebucht</Button>
           </Group>
         </Paper>
 
