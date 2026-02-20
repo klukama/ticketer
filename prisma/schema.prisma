@@ -29,6 +29,7 @@ model Event {
   seatsPerRow       Int       @default(0) // Total seats per row (0 = use old LEFT/RIGHT model)
   aisleAfterSeat    Int       @default(0) // Aisle after this seat number (0 = no aisle)
   backAisleAfterSeat Int      @default(0) // Aisle in back section row (0 = no aisle)
+  rowGroupConfigs   String?   @db.Text // JSON array of row group configs: [{rows,seatsPerRow,aisleAfterSeat}]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   seats       Seat[]
@@ -45,7 +46,7 @@ model Seat {
   status       String    @default("AVAILABLE")
   bookedBy     String?
   bookedAt     DateTime?
-  ticketNumber String?   @unique // Unique ticket number for each booked seat
+  ticketNumber String?   // Ticket number for each booked seat (Freikarte variants may repeat)
   bookingId    String?
   booking      Booking?  @relation(fields: [bookingId], references: [id], onDelete: SetNull)
   createdAt    DateTime  @default(now())

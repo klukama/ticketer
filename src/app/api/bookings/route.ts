@@ -59,11 +59,15 @@ export async function POST(request: Request) {
       )
     }
 
+    // "Freikarte" variants (case-insensitive, spaces ignored) are allowed to repeat
+    const isFreikarte = (ticket: string) =>
+      ticket.toLowerCase().replace(/\s+/g, '') === 'freikarte'
+
     // Check for duplicate ticket numbers in the input using a Set for O(n) complexity
     const ticketSet = new Set<string>()
-    
+
     for (const ticket of ticketNumbers) {
-      if (ticketSet.has(ticket)) {
+      if (!isFreikarte(ticket) && ticketSet.has(ticket)) {
         return NextResponse.json(
           { error: `Duplicate ticket numbers are not allowed: ${ticket}` },
           { status: 400 }
@@ -95,13 +99,16 @@ export async function POST(request: Request) {
       )
     }
 
-    // Check if any ticket numbers already exist in the database
-    const existingTickets = await prisma.seat.findMany({
-      where: {
-        ticketNumber: { in: ticketNumbers }
-      },
-      select: { ticketNumber: true }
-    })
+    // Check if any non-Freikarte ticket numbers already exist in the database
+    const nonFreikarteTickets = ticketNumbers.filter(t => !isFreikarte(t))
+    const existingTickets = nonFreikarteTickets.length > 0
+      ? await prisma.seat.findMany({
+          where: {
+            ticketNumber: { in: nonFreikarteTickets }
+          },
+          select: { ticketNumber: true }
+        })
+      : []
     
     if (existingTickets.length > 0) {
       return NextResponse.json(
