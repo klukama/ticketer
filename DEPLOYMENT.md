@@ -113,6 +113,22 @@ To deploy updates:
 - Check MySQL node is running
 - Verify credentials match MySQL admin console
 
+**App connects to the wrong database name (e.g., `ticketing` instead of `ticketer`):**
+
+This typically happens on Jelastic/Virtuozzo when the MySQL addon **automatically injects its own `DATABASE_URL`** into the Node.js app process using the database name it created (which may differ from what you intend). The value you see with `echo $DATABASE_URL` in an SSH shell reflects only the shell session, not necessarily the environment of the running app process.
+
+To resolve this:
+1. Open the Jelastic dashboard and navigate to your **Node.js node settings** (not the SSH terminal).
+2. Go to **Variables** (environment variables for the app process).
+3. Set `DATABASE_URL` there explicitly — e.g., `mysql://username:password@mysql-host:3306/ticketer`.
+4. Restart the Node.js node.
+
+At startup, the application logs the effective `DATABASE_URL` (with the password masked) so you can verify which URL the app is actually using:
+```
+Initializing Prisma Client (NODE_ENV=production, DATABASE_URL=mysql://username:***@mysql-host:3306/ticketer)
+```
+Check this log line to confirm the correct database name is being used.
+
 **Application won't start:**
 - Check Node.js logs in dashboard
 - Verify all dependencies installed
