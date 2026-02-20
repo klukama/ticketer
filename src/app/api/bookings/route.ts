@@ -77,49 +77,42 @@ export async function POST(request: Request) {
       ticketSet.add(ticket)
     }
 
-    // Check if all seats are available
-    const seats = await prisma.seat.findMany({
-      where: {
-        id: { in: seatIds },
-        eventId,
-      },
-    })
-
-    if (seats.length !== seatIds.length) {
-      return NextResponse.json(
-        { error: 'Some seats were not found' },
-        { status: 404 }
-      )
-    }
-
-    const unavailableSeats = seats.filter(seat => seat.status !== 'AVAILABLE')
-    if (unavailableSeats.length > 0) {
-      return NextResponse.json(
-        { error: 'Some seats are no longer available' },
-        { status: 409 }
-      )
-    }
-
-    // Check if any non-Freikarte ticket numbers already exist in the database
-    const nonFreikarteTickets = ticketNumbers.filter(t => !isFreikarte(t))
-    const existingTickets = nonFreikarteTickets.length > 0
-      ? await prisma.seat.findMany({
-          where: {
-            ticketNumber: { in: nonFreikarteTickets }
-          },
-          select: { ticketNumber: true }
-        })
-      : []
-    
-    if (existingTickets.length > 0) {
-      return NextResponse.json(
-        { error: `Ticket number(s) already exist: ${existingTickets.map(t => t.ticketNumber).join(', ')}` },
-        { status: 409 }
-      )
-    }
-
     // Create booking and update seats in a transaction
+    // Availability check is done INSIDE the transaction to prevent race conditions
+    // where two concurrent requests both see seats as AVAILABLE and both succeed.
     const result = await prisma.$transaction(async (tx) => {
+      // Atomically check seat existence and availability inside the transaction
+      const seats = await tx.seat.findMany({
+        where: {
+          id: { in: seatIds },
+          eventId,
+        },
+      })
+
+      if (seats.length !== seatIds.length) {
+        throw Object.assign(new Error('Some seats were not found'), { statusCode: 404 })
+      }
+
+      const unavailableSeats = seats.filter(seat => seat.status !== 'AVAILABLE')
+      if (unavailableSeats.length > 0) {
+        throw Object.assign(new Error('Some seats are no longer available'), { statusCode: 409 })
+      }
+
+      // Check if any non-Freikarte ticket numbers already exist in the database
+      const nonFreikarteTickets = ticketNumbers.filter(t => !isFreikarte(t))
+      if (nonFreikarteTickets.length > 0) {
+        const existingTickets = await tx.seat.findMany({
+          where: { ticketNumber: { in: nonFreikarteTickets } },
+          select: { ticketNumber: true },
+        })
+        if (existingTickets.length > 0) {
+          throw Object.assign(
+            new Error(`Ticket number(s) already exist: ${existingTickets.map(t => t.ticketNumber).join(', ')}`),
+            { statusCode: 409 }
+          )
+        }
+      }
+
       // Create the booking
       const booking = await tx.booking.create({
         data: {
@@ -133,18 +126,20 @@ export async function POST(request: Request) {
 
       // Create a map for O(1) lookups
       const seatsMap = new Map(seats.map(s => [s.id, s]))
-      
-      // Use user-provided ticket numbers and update seats
+
+      // Use user-provided ticket numbers and update seats atomically.
+      // The `where` clause includes `status: 'AVAILABLE'` so a concurrent
+      // transaction that already booked a seat will cause updateMany to
+      // return count 0, rolling back this transaction.
       const updatedSeats = await Promise.all(
         seatIds.map(async (seatId, index) => {
           const seat = seatsMap.get(seatId)
           if (!seat) throw new Error('Seat not found')
-          
-          // Use the ticket number provided by the user
+
           const ticketNumber = ticketNumbers[index]
-          
-          return tx.seat.update({
-            where: { id: seatId },
+
+          const updated = await tx.seat.updateMany({
+            where: { id: seatId, status: 'AVAILABLE' },
             data: {
               status: 'BOOKED',
               bookedBy: `${customerFirstName} ${customerLastName}`,
@@ -153,6 +148,21 @@ export async function POST(request: Request) {
               bookingId: booking.id,
             },
           })
+
+          if (updated.count === 0) {
+            throw Object.assign(new Error('Some seats are no longer available'), { statusCode: 409 })
+          }
+
+          return {
+            id: seatId,
+            eventId,
+            row: seat.row,
+            number: seat.number,
+            section: seat.section,
+            status: 'BOOKED',
+            ticketNumber,
+            bookingId: booking.id,
+          }
         })
       )
 
@@ -164,6 +174,13 @@ export async function POST(request: Request) {
 
     return NextResponse.json(result)
   } catch (error) {
+    // Re-throw typed errors from inside the transaction as proper HTTP responses
+    if (error instanceof Error && 'statusCode' in error) {
+      const statusCode = (error as Error & { statusCode: number }).statusCode
+      if (statusCode === 404 || statusCode === 409) {
+        return NextResponse.json({ error: error.message }, { status: statusCode })
+      }
+    }
     logError('POST /api/bookings - Error creating booking', error)
     return NextResponse.json({ error: 'Failed to create booking' }, { status: 500 })
   }

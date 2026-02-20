@@ -123,16 +123,42 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
     refetchInterval: 3000, // Refetch every 3 seconds for real-time updates
   })
 
+  // Derive the effective selected seats: exclude any that are no longer AVAILABLE
+  // (e.g. booked concurrently by another customer). This avoids calling setState
+  // inside an effect while still keeping the UI in sync with real-time data.
+  const effectiveSelectedSeats = useMemo(() => {
+    if (!event) return selectedSeats
+    return selectedSeats.filter(seatId => {
+      const seat = event.seats.find(s => s.id === seatId)
+      return !seat || seat.status === 'AVAILABLE'
+    })
+  }, [event, selectedSeats])
+
+  const prevUnavailableCountRef = useRef(0)
+  // Show a notification when freshly-selected seats become unavailable
+  useEffect(() => {
+    if (!event) return
+    const count = selectedSeats.length - effectiveSelectedSeats.length
+    if (count > 0 && count !== prevUnavailableCountRef.current) {
+      notifications.show({
+        title: 'Hinweis',
+        message: `${count} Platz${count > 1 ? 'e wurden' : ' wurde'} von jemand anderem gebucht und steht nicht mehr zur Verfügung.`,
+        color: 'orange',
+      })
+    }
+    prevUnavailableCountRef.current = count
+  }, [event, selectedSeats, effectiveSelectedSeats])
+
   const bookSeatsMutation = useMutation({
     mutationFn: async () => {
-      const ticketNumbersArray = selectedSeats.map(seatId => ticketNumbers[seatId] || '')
+      const ticketNumbersArray = effectiveSelectedSeats.map(seatId => ticketNumbers[seatId] || '')
       
       const res = await fetch('/api/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           eventId,
-          seatIds: selectedSeats,
+          seatIds: effectiveSelectedSeats,
           customerFirstName,
           customerLastName,
           sellerFirstName,
@@ -199,8 +225,8 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
 
   // Memoize the validation check to avoid unnecessary re-computation
   const areAllTicketNumbersFilled = useMemo(() => {
-    return !selectedSeats.some(seatId => !ticketNumbers[seatId]?.trim())
-  }, [selectedSeats, ticketNumbers])
+    return !effectiveSelectedSeats.some(seatId => !ticketNumbers[seatId]?.trim())
+  }, [effectiveSelectedSeats, ticketNumbers])
 
   if (isLoading) return <Container size="lg" py="xl"><Text>Lädt...</Text></Container>
   if (!event) return <Container size="lg" py="xl"><Text>Veranstaltung nicht gefunden</Text></Container>
@@ -426,10 +452,10 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
           </Group>
         </Paper>
 
-        {selectedSeats.length > 0 && (
+        {effectiveSelectedSeats.length > 0 && (
           <Paper shadow="sm" p="md" radius="md" withBorder>
             <Title order={3} size="h4" mb="md">Buchung abschließen</Title>
-            <Text mb="md">Ausgewählte Plätze: {selectedSeats.length}</Text>
+            <Text mb="md">Ausgewählte Plätze: {effectiveSelectedSeats.length}</Text>
             
             <Stack gap="md">
               <div>
@@ -482,7 +508,7 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
                   Geben Sie die vorhandene Ticketnummer für jeden ausgewählten Platz ein
                 </Text>
                 <Stack gap="xs">
-                  {selectedSeats.map((seatId, index) => {
+                  {effectiveSelectedSeats.map((seatId, index) => {
                     const seat = event?.seats.find(s => s.id === seatId)
                     const seatLabel = seat ? `${seat.section} ${seat.row}${seat.number}` : `Seat ${index + 1}`
                     return (
@@ -516,7 +542,7 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
                 }
                 loading={bookSeatsMutation.isPending}
               >
-                {selectedSeats.length} Platz{selectedSeats.length > 1 ? 'e' : ''} buchen
+                {effectiveSelectedSeats.length} Platz{effectiveSelectedSeats.length > 1 ? 'e' : ''} buchen
               </Button>
               <Button variant="light" onClick={() => {
                 setSelectedSeats([])
