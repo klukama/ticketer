@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import { Container, Title, Text, Badge, Button, Group, Stack, Paper, TextInput } from '@mantine/core'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { notifications } from '@mantine/notifications'
@@ -40,6 +41,9 @@ interface Event {
   rightCols: number
   backRows: number
   backCols: number
+  seatsPerRow: number
+  aisleAfterSeat: number
+  backAisleAfterSeat: number
   seats: Seat[]
 }
 
@@ -204,6 +208,7 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
   if (!event) return <Container size="lg" py="xl"><Text>Veranstaltung nicht gefunden</Text></Container>
 
   // Group seats by section and row
+  const mainSeats = event.seats.filter(seat => seat.section === 'MAIN')
   const leftSeats = event.seats.filter(seat => seat.section === 'LEFT')
   const rightSeats = event.seats.filter(seat => seat.section === 'RIGHT')
   const backSeats = event.seats.filter(seat => seat.section === 'RANG')
@@ -216,12 +221,15 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
     }, {} as Record<string, Seat[]>)
   }
 
+  const isFlexibleLayout = mainSeats.length > 0
+
+  const mainSeatsByRow = groupByRow(mainSeats)
   const leftSeatsByRow = groupByRow(leftSeats)
   const rightSeatsByRow = groupByRow(rightSeats)
   const backSeatsByRow = groupByRow(backSeats)
 
-  // Get all unique rows and sort them in REVERSE alphabetical order (Z to A)
-  // This makes A closest to the stage (bottom)
+  // Rows in REVERSE alphabetical order (Z→A), so A is closest to stage (bottom)
+  const mainRows = Object.keys(mainSeatsByRow).sort().reverse()
   const allRows = Array.from(new Set([
     ...Object.keys(leftSeatsByRow),
     ...Object.keys(rightSeatsByRow)
@@ -229,6 +237,20 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
 
   // Get back section rows separately - also in reverse order
   const backRows = Object.keys(backSeatsByRow).sort().reverse()
+
+  const renderSeatButton = (seat: Seat) => (
+    <Button
+      key={seat.id}
+      size="sm"
+      color={getSeatColor(seat)}
+      variant={selectedSeats.includes(seat.id) ? 'filled' : 'light'}
+      onClick={() => toggleSeat(seat.id, seat.status)}
+      disabled={seat.status !== 'AVAILABLE'}
+      style={{ width: 50, minWidth: 40, flexShrink: 0 }}
+    >
+      {seat.number}
+    </Button>
+  )
 
   return (
     <Container size="lg" py="xl">
@@ -289,81 +311,81 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
           >
             <div style={{ zoom: zoomScale, padding: '16px', minWidth: 'max-content' } as React.CSSProperties & { zoom: number }}>
               <Stack gap="sm">
-                {/* Back Section - Centered at the top */}
+                {/* Back Section (RANG) - Centered at the top */}
                 {backRows.length > 0 && (
                   <>
-                    {backRows.map((row) => (
-                      <Group key={`back-${row}`} gap="md" justify="center" wrap="nowrap">
-                        <Text fw={700} w={30} style={{ flexShrink: 0 }}>{row}</Text>
-                        <Group gap="xs" wrap="nowrap" justify="center">
-                          {(backSeatsByRow[row] || []).sort((a, b) => a.number - b.number).map(seat => (
-                            <Button
-                              key={seat.id}
-                              size="sm"
-                              color={getSeatColor(seat)}
-                              variant={selectedSeats.includes(seat.id) ? 'filled' : 'light'}
-                              onClick={() => toggleSeat(seat.id, seat.status)}
-                              disabled={seat.status !== 'AVAILABLE'}
-                              style={{ width: 50, minWidth: 40, flexShrink: 0 }}
-                            >
-                              {seat.number}
-                            </Button>
-                          ))}
+                    {backRows.map((row) => {
+                      const rowSeats = (backSeatsByRow[row] || []).sort((a, b) => a.number - b.number)
+                      const aisle = event.backAisleAfterSeat
+                      return (
+                        <Group key={`back-${row}`} gap="md" justify="center" wrap="nowrap">
+                          <Text fw={700} w={30} style={{ flexShrink: 0 }}>{row}</Text>
+                          <Group gap="xs" wrap="nowrap" justify="center">
+                            {rowSeats.map((seat) => (
+                              <React.Fragment key={seat.id}>
+                                {renderSeatButton(seat)}
+                                {aisle > 0 && seat.number === aisle && (
+                                  <div style={{ width: '20px', flexShrink: 0 }} />
+                                )}
+                              </React.Fragment>
+                            ))}
+                          </Group>
+                          <Text fw={700} w={30} style={{ flexShrink: 0 }}>{row}</Text>
                         </Group>
-                        <Text fw={700} w={30} style={{ flexShrink: 0 }}>{row}</Text>
-                      </Group>
-                    ))}
+                      )
+                    })}
                     {/* Spacer between back section and main sections */}
                     <div style={{ height: '20px' }} />
                   </>
                 )}
 
-                {allRows.map((row) => (
-                  <Group key={row} gap="md" justify="center" align="flex-start" wrap="nowrap">
-                    {/* Left Section */}
-                    <Group gap="xs" justify="flex-end" style={{ flexShrink: 0 }} wrap="nowrap">
-                      <Text fw={700} w={30} style={{ flexShrink: 0 }}>{row}</Text>
-                      <Group gap="xs" wrap="nowrap" justify="flex-end">
-                        {(leftSeatsByRow[row] || []).sort((a, b) => a.number - b.number).map(seat => (
-                          <Button
-                            key={seat.id}
-                            size="sm"
-                            color={getSeatColor(seat)}
-                            variant={selectedSeats.includes(seat.id) ? 'filled' : 'light'}
-                            onClick={() => toggleSeat(seat.id, seat.status)}
-                            disabled={seat.status !== 'AVAILABLE'}
-                            style={{ width: 50, minWidth: 40, flexShrink: 0 }}
-                          >
-                            {seat.number}
-                          </Button>
-                        ))}
+                {isFlexibleLayout ? (
+                  /* New flexible layout: MAIN section rows centered with optional aisle */
+                  mainRows.map((row) => {
+                    const rowSeats = (mainSeatsByRow[row] || []).sort((a, b) => a.number - b.number)
+                    const aisle = event.aisleAfterSeat
+                    return (
+                      <Group key={row} gap="md" justify="center" wrap="nowrap">
+                        <Text fw={700} w={30} style={{ flexShrink: 0 }}>{row}</Text>
+                        <Group gap="xs" wrap="nowrap" justify="center">
+                          {rowSeats.map((seat) => (
+                            <React.Fragment key={seat.id}>
+                              {renderSeatButton(seat)}
+                              {aisle > 0 && seat.number === aisle && (
+                                <div style={{ width: '20px', flexShrink: 0 }} />
+                              )}
+                            </React.Fragment>
+                          ))}
+                        </Group>
+                        <Text fw={700} w={30} style={{ flexShrink: 0 }}>{row}</Text>
+                      </Group>
+                    )
+                  })
+                ) : (
+                  /* Legacy layout: LEFT and RIGHT sections */
+                  allRows.map((row) => (
+                    <Group key={row} gap="md" justify="center" align="flex-start" wrap="nowrap">
+                      {/* Left Section */}
+                      <Group gap="xs" justify="flex-end" style={{ flexShrink: 0 }} wrap="nowrap">
+                        <Text fw={700} w={30} style={{ flexShrink: 0 }}>{row}</Text>
+                        <Group gap="xs" wrap="nowrap" justify="flex-end">
+                          {(leftSeatsByRow[row] || []).sort((a, b) => a.number - b.number).map(seat => renderSeatButton(seat))}
+                        </Group>
+                      </Group>
+
+                      {/* Aisle/Gap between sections */}
+                      <div style={{ width: '20px', flexShrink: 0 }} />
+
+                      {/* Right Section */}
+                      <Group gap="xs" justify="flex-start" style={{ flexShrink: 0 }} wrap="nowrap">
+                        <Group gap="xs" wrap="nowrap" justify="flex-start">
+                          {(rightSeatsByRow[row] || []).sort((a, b) => a.number - b.number).map(seat => renderSeatButton(seat))}
+                        </Group>
+                        <Text fw={700} w={30} style={{ flexShrink: 0 }}>{row}</Text>
                       </Group>
                     </Group>
-
-                    {/* Aisle/Gap between sections */}
-                    <div style={{ width: '20px', flexShrink: 0 }} />
-
-                    {/* Right Section */}
-                    <Group gap="xs" justify="flex-start" style={{ flexShrink: 0 }} wrap="nowrap">
-                      <Group gap="xs" wrap="nowrap" justify="flex-start">
-                        {(rightSeatsByRow[row] || []).sort((a, b) => a.number - b.number).map(seat => (
-                          <Button
-                            key={seat.id}
-                            size="sm"
-                            color={getSeatColor(seat)}
-                            variant={selectedSeats.includes(seat.id) ? 'filled' : 'light'}
-                            onClick={() => toggleSeat(seat.id, seat.status)}
-                            disabled={seat.status !== 'AVAILABLE'}
-                            style={{ width: 50, minWidth: 40, flexShrink: 0 }}
-                          >
-                            {seat.number}
-                          </Button>
-                        ))}
-                      </Group>
-                      <Text fw={700} w={30} style={{ flexShrink: 0 }}>{row}</Text>
-                    </Group>
-                  </Group>
-                ))}
+                  ))
+                )}
               </Stack>
 
               {/* Stage */}
