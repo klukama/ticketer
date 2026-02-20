@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { logError } from '@/lib/logger'
 
 export async function POST(request: Request) {
   try {
@@ -163,7 +164,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(result)
   } catch (error) {
-    console.error('Error creating booking:', error)
+    logError('POST /api/bookings - Error creating booking', error)
     return NextResponse.json({ error: 'Failed to create booking' }, { status: 500 })
   }
 }

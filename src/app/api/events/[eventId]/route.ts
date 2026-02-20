@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { logError } from '@/lib/logger'
 
 export async function GET(
   request: Request,
@@ -28,7 +29,7 @@ export async function GET(
 
     return NextResponse.json(event)
   } catch (error) {
-    console.error('Error fetching event:', error)
+    logError('GET /api/events/[eventId] - Error fetching event', error)
     return NextResponse.json({ error: 'Failed to fetch event' }, { status: 500 })
   }
 }
@@ -92,7 +93,7 @@ export async function PATCH(
 
     return NextResponse.json(event)
   } catch (error) {
-    console.error('Error updating event:', error)
+    logError('PATCH /api/events/[eventId] - Error updating event', error)
     return NextResponse.json({ error: 'Failed to update event' }, { status: 500 })
   }
 }
@@ -123,7 +124,7 @@ export async function DELETE(
 
     return NextResponse.json({ message: 'Event deleted successfully' })
   } catch (error) {
-    console.error('Error deleting event:', error)
+    logError('DELETE /api/events/[eventId] - Error deleting event', error)
 
     if (error instanceof Error && error.message === 'Event not found') {
       return NextResponse.json({ error: 'Event not found' }, { status: 404 })
