@@ -397,7 +397,7 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
             
             <Stack gap="md">
               <div>
-                <Title order={4} size="h5" mb="xs">Kundeninformationen</Title>
+                <Title order={4} size="h5" mb="xs">Kunde</Title>
                 <Group grow wrap="wrap">
                   <TextInput
                     label="Vorname"
@@ -419,7 +419,7 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
               </div>
 
               <div>
-                <Title order={4} size="h5" mb="xs">Verkäuferinformationen</Title>
+                <Title order={4} size="h5" mb="xs">Verkäufer</Title>
                 <Group grow wrap="wrap">
                   <TextInput
                     label="Vorname"
