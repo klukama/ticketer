@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { logError } from '@/lib/logger';
 
 export async function GET() {
   try {
@@ -14,6 +15,7 @@ export async function GET() {
       nodeVersion: process.version,
     });
   } catch (error) {
+    logError('GET /api/health - Database health check failed', error);
     return NextResponse.json(
       {
         status: 'unhealthy',

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { logError } from '@/lib/logger'
 
 export async function GET(
   request: Request,
@@ -16,7 +17,7 @@ export async function GET(
     })
     return NextResponse.json(seats)
   } catch (error) {
-    console.error('Error fetching seats:', error)
+    logError('GET /api/events/[eventId]/seats - Error fetching seats', error)
     return NextResponse.json({ error: 'Failed to fetch seats' }, { status: 500 })
   }
 }
@@ -66,7 +67,7 @@ export async function PATCH(
 
     return NextResponse.json(seat)
   } catch (error) {
-    console.error('Error updating seat:', error)
+    logError('PATCH /api/events/[eventId]/seats - Error updating seat', error)
 
     if (error instanceof Error) {
       if (error.message === 'Seat not found') {
