@@ -66,9 +66,23 @@ After deployment:
 3. Run initialization:
    ```bash
    npm run db:generate
-   npm run db:push
+   npm run db:migrate
    npm run db:seed
    ```
+
+> **Note:** `db:migrate` runs `prisma migrate deploy`, which applies any pending migrations in order. For a brand-new database this creates all tables. For an existing database it only applies migrations that have not been applied yet.
+
+### 5a. Migrating an Existing Deployment (database was previously set up with `db:push`)
+
+If your production database was created with `npm run db:push` (without migrations), you must first baseline the initial migration before running `db:migrate`:
+
+```bash
+# 1. Mark the initial schema migration as already applied (tables already exist)
+npx prisma migrate resolve --applied 20250101000000_init
+
+# 2. Apply only the new migrations (e.g. adds rowGroupConfigs column)
+npm run db:migrate
+```
 
 ### 6. Restart Application
 
@@ -104,9 +118,15 @@ If needed, you can:
 To deploy updates:
 1. Push changes to Git repository (if using Git deployment)
 2. Or upload new archive via Deployment Manager
-3. Restart Node.js node
+3. Apply any new database migrations: `npm run db:migrate`
+4. Restart Node.js node
 
 ## Troubleshooting
+
+**Column does not exist in database (e.g. `rowGroupConfigs`):**
+- A schema field was added but the migration was not applied to the database
+- Run `npm run db:migrate` to apply pending migrations
+- If the database was originally set up with `db:push`, see section 5a above for baseline steps
 
 **Cannot connect to database:**
 - Verify `DATABASE_URL` environment variable
