@@ -4,7 +4,7 @@ import React from 'react'
 import { Container, Title, Text, Card, Group, Badge, Button, Stack, Modal, TextInput, Textarea, Table, Paper, Switch, Divider } from '@mantine/core'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { notifications } from '@mantine/notifications'
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 
 interface Event {
@@ -70,6 +70,12 @@ export default function AdminPage() {
   const [editModalOpen, setEditModalOpen] = useState(false)
   const [viewBookingsEventId, setViewBookingsEventId] = useState<string | null>(null)
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null)
+  const [adminSeatZoom, setAdminSeatZoom] = useState(1)
+  const adminSeatMapRef = useRef<HTMLDivElement>(null)
+  const adminLastTouchDistRef = useRef<number | null>(null)
+  const ADMIN_MIN_ZOOM = 0.3
+  const ADMIN_MAX_ZOOM = 3
+  const ADMIN_ZOOM_STEP = 0.25
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -81,6 +87,50 @@ export default function AdminPage() {
     backAisleAfterSeat: 0,
     backHasAisle: false,
   })
+
+  useEffect(() => {
+    const container = adminSeatMapRef.current
+    if (!container) return
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        adminLastTouchDistRef.current = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        )
+      }
+    }
+    const onTouchMove = (e: TouchEvent) => {
+      if (e.touches.length === 2 && adminLastTouchDistRef.current !== null) {
+        e.preventDefault()
+        const dist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        )
+        const delta = dist - adminLastTouchDistRef.current
+        setAdminSeatZoom(prev => Math.min(ADMIN_MAX_ZOOM, Math.max(ADMIN_MIN_ZOOM, prev + delta * 0.01)))
+        adminLastTouchDistRef.current = dist
+      }
+    }
+    const onTouchEnd = () => { adminLastTouchDistRef.current = null }
+    const onWheel = (e: WheelEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault()
+        setAdminSeatZoom(prev => Math.min(ADMIN_MAX_ZOOM, Math.max(ADMIN_MIN_ZOOM, prev - e.deltaY * 0.005)))
+      }
+    }
+
+    container.addEventListener('touchstart', onTouchStart, { passive: true })
+    container.addEventListener('touchmove', onTouchMove, { passive: false })
+    container.addEventListener('touchend', onTouchEnd)
+    container.addEventListener('wheel', onWheel, { passive: false })
+    return () => {
+      container.removeEventListener('touchstart', onTouchStart)
+      container.removeEventListener('touchmove', onTouchMove)
+      container.removeEventListener('touchend', onTouchEnd)
+      container.removeEventListener('wheel', onWheel)
+    }
+  }, [viewBookingsEventId])
 
   const queryClient = useQueryClient()
 
@@ -649,9 +699,9 @@ export default function AdminPage() {
       {/* View Bookings Modal */}
       <Modal
         opened={!!viewBookingsEventId}
-        onClose={() => setViewBookingsEventId(null)}
+        onClose={() => { setViewBookingsEventId(null); setAdminSeatZoom(1) }}
         title={`Buchungen für ${bookingsEvent?.title || ''}`}
-        size="xl"
+        size="90%"
       >
         {bookingsEvent && (
           <Stack gap="md">
@@ -685,178 +735,219 @@ export default function AdminPage() {
 
             {/* Seat Visualization */}
             <Paper p="md" withBorder>
-              <Title order={4} size="h5" mb="md">Sitzplan</Title>
-              <Stack gap="sm">
-                {/* Back Section - Centered at the top */}
-                {(() => {
-                  const backSeats = bookingsEvent.seats.filter(seat => seat.section === 'RANG')
-                  const backSeatsByRow = backSeats.reduce((acc, seat) => {
-                    if (!acc[seat.row]) acc[seat.row] = []
-                    acc[seat.row].push(seat)
-                    return acc
-                  }, {} as Record<string, typeof backSeats>)
-                  const backRows = Object.keys(backSeatsByRow).sort().reverse()
-                  const backAisle = bookingsEvent.backAisleAfterSeat || 0
+              <Group justify="space-between" align="center" mb="md" wrap="wrap" gap="xs">
+                <Title order={4} size="h5">Sitzplan</Title>
+                <Group gap="xs" align="center">
+                  <Button
+                    size="xs"
+                    variant="default"
+                    onClick={() => setAdminSeatZoom(prev => Math.max(ADMIN_MIN_ZOOM, prev - ADMIN_ZOOM_STEP))}
+                    title="Verkleinern"
+                    style={{ fontWeight: 700, fontSize: '1rem', minWidth: 32 }}
+                  >−</Button>
+                  <Text size="sm" ta="center" style={{ minWidth: 42 }}>{Math.round(adminSeatZoom * 100)}%</Text>
+                  <Button
+                    size="xs"
+                    variant="default"
+                    onClick={() => setAdminSeatZoom(prev => Math.min(ADMIN_MAX_ZOOM, prev + ADMIN_ZOOM_STEP))}
+                    title="Vergrößern"
+                    style={{ fontWeight: 700, fontSize: '1rem', minWidth: 32 }}
+                  >+</Button>
+                  <Button
+                    size="xs"
+                    variant="subtle"
+                    onClick={() => setAdminSeatZoom(1)}
+                    title="Zoom zurücksetzen"
+                  >Reset</Button>
+                </Group>
+              </Group>
 
-                  const seatBtn = (seat: typeof backSeats[0]) => (
-                    <Button
-                      key={seat.id}
-                      size="xs"
-                      color={seat.status === 'BOOKED' ? 'red' : seat.status === 'RESERVED' ? 'yellow' : 'green'}
-                      variant="filled"
-                      style={{ width: 44, minWidth: 44, flexShrink: 0, cursor: 'default' }}
-                      onClick={(e) => e.preventDefault()}
-                    >
-                      {seat.number}
-                    </Button>
-                  )
-                  
-                  return backRows.length > 0 && (
-                    <>
-                      {backRows.map((row) => (
-                        <Group key={`back-${row}`} gap="md" justify="center" wrap="wrap">
-                          <Text fw={700} w={30} style={{ flexShrink: 0 }}>{row}</Text>
-                          <Group gap="xs" wrap="wrap" justify="center">
-                            {(backSeatsByRow[row] || []).sort((a, b) => a.number - b.number).map(seat => (
-                              <React.Fragment key={seat.id}>
-                                {seatBtn(seat)}
-                                {backAisle > 0 && seat.number === backAisle && (
-                                  <div style={{ width: '20px', flexShrink: 0 }} />
-                                )}
-                              </React.Fragment>
-                            ))}
-                          </Group>
-                          <Text fw={700} w={30} style={{ flexShrink: 0 }}>{row}</Text>
-                        </Group>
-                      ))}
-                      <div style={{ height: '20px' }} />
-                    </>
-                  )
-                })()}
-
-                {/* Main sections */}
-                {(() => {
-                  const mainSeats = bookingsEvent.seats.filter(seat => seat.section === 'MAIN' || seat.section === 'PARKETT')
-                  const leftSeats = bookingsEvent.seats.filter(seat => seat.section === 'LEFT')
-                  const rightSeats = bookingsEvent.seats.filter(seat => seat.section === 'RIGHT')
-                  const isFlexible = mainSeats.length > 0
-                  const mainAisle = bookingsEvent.aisleAfterSeat || 0
-
-                  // Build per-row aisle map from rowGroupConfigs if available
-                  const rowAisleMap: Record<string, number> = {}
-                  const rawRowGroupConfigs = (bookingsEvent as EventWithSeats & { rowGroupConfigs?: string | null }).rowGroupConfigs
-                  if (rawRowGroupConfigs) {
-                    try {
-                      const groups: Array<{ rows: number; seatsPerRow: number; aisleAfterSeat: number }> = JSON.parse(rawRowGroupConfigs)
-                      let rowIdx = 0
-                      for (const g of groups) {
-                        for (let r = 0; r < g.rows; r++) {
-                          rowAisleMap[String.fromCharCode(65 + rowIdx++)] = g.aisleAfterSeat || 0
-                        }
-                      }
-                    } catch { /* ignore */ }
-                  }
-                  const getRowAisle = (row: string) =>
-                    Object.keys(rowAisleMap).length > 0 ? (rowAisleMap[row] ?? 0) : mainAisle
-
-                  const seatBtn = (seat: typeof mainSeats[0]) => (
-                    <Button
-                      key={seat.id}
-                      size="xs"
-                      color={seat.status === 'BOOKED' ? 'red' : seat.status === 'RESERVED' ? 'yellow' : 'green'}
-                      variant="filled"
-                      style={{ width: 44, minWidth: 44, flexShrink: 0, cursor: 'default' }}
-                      onClick={(e) => e.preventDefault()}
-                    >
-                      {seat.number}
-                    </Button>
-                  )
-
-                  if (isFlexible) {
-                    const mainSeatsByRow = mainSeats.reduce((acc, seat) => {
-                      if (!acc[seat.row]) acc[seat.row] = []
-                      acc[seat.row].push(seat)
-                      return acc
-                    }, {} as Record<string, typeof mainSeats>)
-                    const mainRows = Object.keys(mainSeatsByRow).sort().reverse()
-
-                    return mainRows.map((row) => (
-                      <Group key={row} gap="md" justify="center" wrap="nowrap">
-                        <Text fw={700} w={30} style={{ flexShrink: 0 }}>{row}</Text>
-                        <Group gap="xs" wrap="nowrap" justify="center">
-                          {(mainSeatsByRow[row] || []).sort((a, b) => a.number - b.number).map(seat => (
-                            <React.Fragment key={seat.id}>
-                              {seatBtn(seat)}
-                              {getRowAisle(row) > 0 && seat.number === getRowAisle(row) && (
-                                <div style={{ width: '20px', flexShrink: 0 }} />
-                              )}
-                            </React.Fragment>
-                          ))}
-                        </Group>
-                        <Text fw={700} w={30} style={{ flexShrink: 0 }}>{row}</Text>
-                      </Group>
-                    ))
-                  }
-
-                  // Legacy LEFT/RIGHT layout
-                  const leftSeatsByRow = leftSeats.reduce((acc, seat) => {
-                    if (!acc[seat.row]) acc[seat.row] = []
-                    acc[seat.row].push(seat)
-                    return acc
-                  }, {} as Record<string, typeof leftSeats>)
-                  
-                  const rightSeatsByRow = rightSeats.reduce((acc, seat) => {
-                    if (!acc[seat.row]) acc[seat.row] = []
-                    acc[seat.row].push(seat)
-                    return acc
-                  }, {} as Record<string, typeof rightSeats>)
-                  
-                  const allRows = Array.from(new Set([
-                    ...Object.keys(leftSeatsByRow),
-                    ...Object.keys(rightSeatsByRow)
-                  ])).sort().reverse()
-
-                  return allRows.map((row) => (
-                    <Group key={row} gap="md" justify="center" align="flex-start" wrap="wrap">
-                      {/* Left Section */}
-                      <Group gap="xs" justify="flex-end" style={{ minWidth: '150px', flex: '1 1 auto', maxWidth: '100%' }} wrap="wrap">
-                        <Text fw={700} w={30} style={{ flexShrink: 0 }}>{row}</Text>
-                        <Group gap="xs" wrap="wrap" justify="flex-end">
-                          {(leftSeatsByRow[row] || []).sort((a, b) => a.number - b.number).map(seat => seatBtn(seat))}
-                        </Group>
-                      </Group>
-
-                      {/* Aisle/Gap between sections */}
-                      <div style={{ width: '20px', minWidth: '10px', flexShrink: 0 }} />
-
-                      {/* Right Section */}
-                      <Group gap="xs" justify="flex-start" style={{ minWidth: '150px', flex: '1 1 auto', maxWidth: '100%' }} wrap="wrap">
-                        <Group gap="xs" wrap="wrap" justify="flex-start">
-                          {(rightSeatsByRow[row] || []).sort((a, b) => a.number - b.number).map(seat => seatBtn(seat))}
-                        </Group>
-                        <Text fw={700} w={30} style={{ flexShrink: 0 }}>{row}</Text>
-                      </Group>
-                    </Group>
-                  ))
-                })()}
-              </Stack>
-
-              {/* Stage */}
-              <Paper 
-                mt="lg" 
-                p="md" 
-                ta="center"
-                style={{ 
-                  backgroundColor: '#adb5bd',
-                  color: '#fff',
-                  fontWeight: 700,
-                  fontSize: '1.2rem'
-                }}
+              {/* Scrollable zoomable seat map */}
+              <div
+                ref={adminSeatMapRef}
+                style={{
+                  overflow: 'auto',
+                  border: '1px solid #dee2e6',
+                  borderRadius: '8px',
+                  maxHeight: '65vh',
+                  touchAction: 'pan-x pan-y',
+                  WebkitOverflowScrolling: 'touch',
+                } as React.CSSProperties}
               >
-                Bühne
-              </Paper>
+                <div style={{ zoom: adminSeatZoom, padding: '16px', minWidth: 'max-content' } as React.CSSProperties & { zoom: number }}>
+                  <Stack gap="sm">
+                    {/* Back Section - Centered at the top */}
+                    {(() => {
+                      const backSeats = bookingsEvent.seats.filter(seat => seat.section === 'RANG')
+                      const backSeatsByRow = backSeats.reduce((acc, seat) => {
+                        if (!acc[seat.row]) acc[seat.row] = []
+                        acc[seat.row].push(seat)
+                        return acc
+                      }, {} as Record<string, typeof backSeats>)
+                      const backRows = Object.keys(backSeatsByRow).sort().reverse()
+                      const backAisle = bookingsEvent.backAisleAfterSeat || 0
 
-              <Group gap="md" mt="lg" wrap="wrap">
+                      const seatBtn = (seat: typeof backSeats[0]) => (
+                        <Button
+                          key={seat.id}
+                          size="xs"
+                          color={seat.status === 'BOOKED' ? 'red' : seat.status === 'RESERVED' ? 'yellow' : 'green'}
+                          variant="filled"
+                          style={{ width: 44, minWidth: 44, flexShrink: 0, cursor: 'default' }}
+                          onClick={(e) => e.preventDefault()}
+                        >
+                          {seat.number}
+                        </Button>
+                      )
+                      
+                      return backRows.length > 0 && (
+                        <>
+                          {backRows.map((row) => (
+                            <Group key={`back-${row}`} gap="md" justify="center" wrap="nowrap">
+                              <Text fw={700} w={30} style={{ flexShrink: 0 }}>{row}</Text>
+                              <Group gap="xs" wrap="nowrap" justify="center">
+                                {(backSeatsByRow[row] || []).sort((a, b) => a.number - b.number).map(seat => (
+                                  <React.Fragment key={seat.id}>
+                                    {seatBtn(seat)}
+                                    {backAisle > 0 && seat.number === backAisle && (
+                                      <div style={{ width: '20px', flexShrink: 0 }} />
+                                    )}
+                                  </React.Fragment>
+                                ))}
+                              </Group>
+                              <Text fw={700} w={30} style={{ flexShrink: 0 }}>{row}</Text>
+                            </Group>
+                          ))}
+                          <div style={{ height: '20px' }} />
+                        </>
+                      )
+                    })()}
+
+                    {/* Main sections */}
+                    {(() => {
+                      const mainSeats = bookingsEvent.seats.filter(seat => seat.section === 'MAIN' || seat.section === 'PARKETT')
+                      const leftSeats = bookingsEvent.seats.filter(seat => seat.section === 'LEFT')
+                      const rightSeats = bookingsEvent.seats.filter(seat => seat.section === 'RIGHT')
+                      const isFlexible = mainSeats.length > 0
+                      const mainAisle = bookingsEvent.aisleAfterSeat || 0
+
+                      // Build per-row aisle map from rowGroupConfigs if available
+                      const rowAisleMap: Record<string, number> = {}
+                      const rawRowGroupConfigs = (bookingsEvent as EventWithSeats & { rowGroupConfigs?: string | null }).rowGroupConfigs
+                      if (rawRowGroupConfigs) {
+                        try {
+                          const groups: Array<{ rows: number; seatsPerRow: number; aisleAfterSeat: number }> = JSON.parse(rawRowGroupConfigs)
+                          let rowIdx = 0
+                          for (const g of groups) {
+                            for (let r = 0; r < g.rows; r++) {
+                              rowAisleMap[String.fromCharCode(65 + rowIdx++)] = g.aisleAfterSeat || 0
+                            }
+                          }
+                        } catch { /* ignore */ }
+                      }
+                      const getRowAisle = (row: string) =>
+                        Object.keys(rowAisleMap).length > 0 ? (rowAisleMap[row] ?? 0) : mainAisle
+
+                      const seatBtn = (seat: typeof mainSeats[0]) => (
+                        <Button
+                          key={seat.id}
+                          size="xs"
+                          color={seat.status === 'BOOKED' ? 'red' : seat.status === 'RESERVED' ? 'yellow' : 'green'}
+                          variant="filled"
+                          style={{ width: 44, minWidth: 44, flexShrink: 0, cursor: 'default' }}
+                          onClick={(e) => e.preventDefault()}
+                        >
+                          {seat.number}
+                        </Button>
+                      )
+
+                      if (isFlexible) {
+                        const mainSeatsByRow = mainSeats.reduce((acc, seat) => {
+                          if (!acc[seat.row]) acc[seat.row] = []
+                          acc[seat.row].push(seat)
+                          return acc
+                        }, {} as Record<string, typeof mainSeats>)
+                        const mainRows = Object.keys(mainSeatsByRow).sort().reverse()
+
+                        return mainRows.map((row) => (
+                          <Group key={row} gap="md" justify="center" wrap="nowrap">
+                            <Text fw={700} w={30} style={{ flexShrink: 0 }}>{row}</Text>
+                            <Group gap="xs" wrap="nowrap" justify="center">
+                              {(mainSeatsByRow[row] || []).sort((a, b) => a.number - b.number).map(seat => (
+                                <React.Fragment key={seat.id}>
+                                  {seatBtn(seat)}
+                                  {getRowAisle(row) > 0 && seat.number === getRowAisle(row) && (
+                                    <div style={{ width: '20px', flexShrink: 0 }} />
+                                  )}
+                                </React.Fragment>
+                              ))}
+                            </Group>
+                            <Text fw={700} w={30} style={{ flexShrink: 0 }}>{row}</Text>
+                          </Group>
+                        ))
+                      }
+
+                      // Legacy LEFT/RIGHT layout
+                      const leftSeatsByRow = leftSeats.reduce((acc, seat) => {
+                        if (!acc[seat.row]) acc[seat.row] = []
+                        acc[seat.row].push(seat)
+                        return acc
+                      }, {} as Record<string, typeof leftSeats>)
+                      
+                      const rightSeatsByRow = rightSeats.reduce((acc, seat) => {
+                        if (!acc[seat.row]) acc[seat.row] = []
+                        acc[seat.row].push(seat)
+                        return acc
+                      }, {} as Record<string, typeof rightSeats>)
+                      
+                      const allRows = Array.from(new Set([
+                        ...Object.keys(leftSeatsByRow),
+                        ...Object.keys(rightSeatsByRow)
+                      ])).sort().reverse()
+
+                      return allRows.map((row) => (
+                        <Group key={row} gap="md" justify="center" align="flex-start" wrap="nowrap">
+                          {/* Left Section */}
+                          <Group gap="xs" justify="flex-end" style={{ flexShrink: 0 }} wrap="nowrap">
+                            <Text fw={700} w={30} style={{ flexShrink: 0 }}>{row}</Text>
+                            <Group gap="xs" wrap="nowrap" justify="flex-end">
+                              {(leftSeatsByRow[row] || []).sort((a, b) => a.number - b.number).map(seat => seatBtn(seat))}
+                            </Group>
+                          </Group>
+
+                          {/* Aisle/Gap between sections */}
+                          <div style={{ width: '20px', flexShrink: 0 }} />
+
+                          {/* Right Section */}
+                          <Group gap="xs" justify="flex-start" style={{ flexShrink: 0 }} wrap="nowrap">
+                            <Group gap="xs" wrap="nowrap" justify="flex-start">
+                              {(rightSeatsByRow[row] || []).sort((a, b) => a.number - b.number).map(seat => seatBtn(seat))}
+                            </Group>
+                            <Text fw={700} w={30} style={{ flexShrink: 0 }}>{row}</Text>
+                          </Group>
+                        </Group>
+                      ))
+                    })()}
+                  </Stack>
+
+                  {/* Stage */}
+                  <Paper 
+                    mt="lg" 
+                    p="md" 
+                    ta="center"
+                    style={{ 
+                      backgroundColor: '#adb5bd',
+                      color: '#fff',
+                      fontWeight: 700,
+                      fontSize: '1.2rem'
+                    }}
+                  >
+                    Bühne
+                  </Paper>
+                </div>
+              </div>
+
+              <Group gap="md" mt="sm" wrap="wrap">
                 <Button size="xs" color="green" variant="filled" style={{ cursor: 'default' }} onClick={(e) => e.preventDefault()}>Verfügbar</Button>
                 <Button size="xs" color="yellow" variant="filled" style={{ cursor: 'default' }} onClick={(e) => e.preventDefault()}>Reserviert</Button>
                 <Button size="xs" color="red" variant="filled" style={{ cursor: 'default' }} onClick={(e) => e.preventDefault()}>Gebucht</Button>
