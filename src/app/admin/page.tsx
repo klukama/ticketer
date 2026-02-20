@@ -111,6 +111,7 @@ export default function AdminPage() {
       let payload: Record<string, unknown>
 
       if (data.useFlexibleLayout) {
+        // In flexible layout, leftRows stores the total number of main section rows
         totalSeats = data.leftRows * data.seatsPerRow + data.backRows * data.backCols
         payload = {
           title: data.title,
@@ -309,6 +310,7 @@ export default function AdminPage() {
       aisleAfterSeat: eventWithConfig.aisleAfterSeat || 5,
       backAisleAfterSeat: eventWithConfig.backAisleAfterSeat || 0,
       useFlexibleLayout: (eventWithConfig.seatsPerRow || 0) > 0,
+      // aisleAfterSeat = 0 means no aisle (seat numbers start at 1, so 0 is never a valid position)
       hasAisle: (eventWithConfig.aisleAfterSeat || 0) > 0,
       backHasAisle: (eventWithConfig.backAisleAfterSeat || 0) > 0,
     })

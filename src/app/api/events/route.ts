@@ -115,7 +115,9 @@ export async function POST(request: Request) {
 
       if (seatsPerRowCount > 0) {
         // New flexible model: single MAIN section
-        for (let rowIndex = 0; rowIndex < leftRowsCount; rowIndex++) {
+        // leftRowsCount stores the total number of rows for the main section in flexible mode
+        const mainRowsCount = leftRowsCount
+        for (let rowIndex = 0; rowIndex < mainRowsCount; rowIndex++) {
           const row = getRowLabel(rowIndex)
           for (let i = 1; i <= seatsPerRowCount; i++) {
             seats.push({
