@@ -44,6 +44,7 @@ interface Event {
   seatsPerRow: number
   aisleAfterSeat: number
   backAisleAfterSeat: number
+  rowGroupConfigs?: string | null
   seats: Seat[]
 }
 
@@ -208,10 +209,26 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
   if (!event) return <Container size="lg" py="xl"><Text>Veranstaltung nicht gefunden</Text></Container>
 
   // Group seats by section and row
-  const mainSeats = event.seats.filter(seat => seat.section === 'MAIN')
+  const mainSeats = event.seats.filter(seat => seat.section === 'MAIN' || seat.section === 'PARKETT')
   const leftSeats = event.seats.filter(seat => seat.section === 'LEFT')
   const rightSeats = event.seats.filter(seat => seat.section === 'RIGHT')
   const backSeats = event.seats.filter(seat => seat.section === 'RANG')
+
+  // Build per-row aisle map from rowGroupConfigs if available
+  const rowAisleMap: Record<string, number> = {}
+  if (event.rowGroupConfigs) {
+    try {
+      const groups: Array<{ rows: number; seatsPerRow: number; aisleAfterSeat: number }> = JSON.parse(event.rowGroupConfigs)
+      let rowIdx = 0
+      for (const g of groups) {
+        for (let r = 0; r < g.rows; r++) {
+          rowAisleMap[String.fromCharCode(65 + rowIdx++)] = g.aisleAfterSeat || 0
+        }
+      }
+    } catch { /* ignore */ }
+  }
+  const getMainRowAisle = (row: string) =>
+    Object.keys(rowAisleMap).length > 0 ? (rowAisleMap[row] ?? 0) : event.aisleAfterSeat
 
   const groupByRow = (seats: Seat[]) => {
     return seats.reduce((acc, seat) => {
@@ -241,12 +258,12 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
   const renderSeatButton = (seat: Seat) => (
     <Button
       key={seat.id}
-      size="sm"
+      size="xs"
       color={getSeatColor(seat)}
       variant={selectedSeats.includes(seat.id) ? 'filled' : 'light'}
       onClick={() => toggleSeat(seat.id, seat.status)}
       disabled={seat.status !== 'AVAILABLE'}
-      style={{ width: 50, minWidth: 40, flexShrink: 0 }}
+      style={{ width: 44, minWidth: 44, flexShrink: 0 }}
     >
       {seat.number}
     </Button>
@@ -340,10 +357,10 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
                 )}
 
                 {isFlexibleLayout ? (
-                  /* New flexible layout: MAIN section rows centered with optional aisle */
+                  /* New flexible layout: MAIN/PARKETT section rows centered with optional aisle */
                   mainRows.map((row) => {
                     const rowSeats = (mainSeatsByRow[row] || []).sort((a, b) => a.number - b.number)
-                    const aisle = event.aisleAfterSeat
+                    const aisle = getMainRowAisle(row)
                     return (
                       <Group key={row} gap="md" justify="center" wrap="nowrap">
                         <Text fw={700} w={30} style={{ flexShrink: 0 }}>{row}</Text>

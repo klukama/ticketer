@@ -21,7 +21,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { title, description, venue, date, totalSeats, imageUrl, leftRows, leftCols, rightRows, rightCols, backRows, backCols, seatsPerRow, aisleAfterSeat, backAisleAfterSeat } = body
+    const { title, description, venue, date, totalSeats, imageUrl, leftRows, leftCols, rightRows, rightCols, backRows, backCols, seatsPerRow, aisleAfterSeat, backAisleAfterSeat, rowGroupConfigs } = body
 
     // Validate required fields
     if (!title || !venue || !date || !totalSeats) {
@@ -104,6 +104,7 @@ export async function POST(request: Request) {
           seatsPerRow: seatsPerRowCount,
           aisleAfterSeat: aisleAfterSeatCount,
           backAisleAfterSeat: backAisleAfterSeatCount,
+          ...(rowGroupConfigs !== undefined && rowGroupConfigs !== null && { rowGroupConfigs: String(rowGroupConfigs) }),
         },
       })
 
@@ -113,7 +114,32 @@ export async function POST(request: Request) {
       // Generate row labels (A, B, C, ...)
       const getRowLabel = (index: number) => String.fromCharCode(65 + index) // 65 is 'A'
 
-      if (seatsPerRowCount > 0) {
+      if (rowGroupConfigs) {
+        // Row-group model: variable aisle per group, section = PARKETT
+        let parsedGroups: Array<{ rows: number; seatsPerRow: number; aisleAfterSeat: number }> = []
+        try {
+          parsedGroups = JSON.parse(String(rowGroupConfigs))
+        } catch {
+          parsedGroups = []
+        }
+        let rowIndex = 0
+        for (const group of parsedGroups) {
+          const groupRows = Number(group.rows) || 0
+          const groupSeatsPerRow = Number(group.seatsPerRow) || 0
+          for (let r = 0; r < groupRows; r++) {
+            const row = getRowLabel(rowIndex++)
+            for (let i = 1; i <= groupSeatsPerRow; i++) {
+              seats.push({
+                eventId: newEvent.id,
+                row,
+                number: i,
+                section: 'PARKETT',
+                status: 'AVAILABLE',
+              })
+            }
+          }
+        }
+      } else if (seatsPerRowCount > 0) {
         // New flexible model: single MAIN section
         // leftRowsCount stores the total number of rows for the main section in flexible mode
         const mainRowsCount = leftRowsCount
