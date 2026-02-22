@@ -4,7 +4,7 @@ import React from 'react'
 import { Container, Title, Text, Badge, Button, Group, Stack, Paper, TextInput } from '@mantine/core'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { notifications } from '@mantine/notifications'
-import { use, useState, useMemo, useRef, useEffect } from 'react'
+import { use, useState, useMemo, useRef, useEffect, useLayoutEffect } from 'react'
 import Link from 'next/link'
 
 interface Booking {
@@ -59,7 +59,9 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
 
   const [zoomScale, setZoomScale] = useState(1)
   const seatMapContainerRef = useRef<HTMLDivElement>(null)
+  const seatMapContentRef = useRef<HTMLDivElement>(null)
   const lastTouchDistRef = useRef<number | null>(null)
+  const [naturalSize, setNaturalSize] = useState({ width: 0, height: 0 })
 
   useEffect(() => {
     const container = seatMapContainerRef.current
@@ -122,6 +124,15 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
     },
     refetchInterval: 3000, // Refetch every 3 seconds for real-time updates
   })
+
+  useLayoutEffect(() => {
+    if (seatMapContentRef.current && event) {
+      setNaturalSize({
+        width: seatMapContentRef.current.offsetWidth,
+        height: seatMapContentRef.current.offsetHeight,
+      })
+    }
+  }, [event])
 
   const bookSeatsMutation = useMutation({
     mutationFn: async () => {
@@ -323,7 +334,17 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
               WebkitOverflowScrolling: 'touch',
             } as React.CSSProperties}
           >
-            <div style={{ zoom: zoomScale, padding: '16px', minWidth: 'max-content' } as React.CSSProperties & { zoom: number }}>
+            <div
+              ref={seatMapContentRef}
+              style={{
+                transform: `scale(${zoomScale})`,
+                transformOrigin: 'top left',
+                padding: '16px',
+                minWidth: 'max-content',
+                marginRight: `${Math.max(0, naturalSize.width * (zoomScale - 1))}px`,
+                marginBottom: `${Math.max(0, naturalSize.height * (zoomScale - 1))}px`,
+              }}
+            >
               <Stack gap="sm">
                 {/* Back Section (RANG) - Centered at the top */}
                 {backRows.length > 0 && (
