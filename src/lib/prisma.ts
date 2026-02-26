@@ -5,7 +5,18 @@ const globalForPrisma = globalThis as unknown as {
 }
 
 if (!globalForPrisma.prisma) {
-  console.log(`[${new Date().toISOString()}] Initializing Prisma Client (NODE_ENV=${process.env.NODE_ENV})`)
+  const rawUrl = process.env.DATABASE_URL
+  let maskedUrl = 'not set'
+  if (rawUrl) {
+    try {
+      const parsed = new URL(rawUrl)
+      if (parsed.password) parsed.password = '***'
+      maskedUrl = parsed.toString()
+    } catch {
+      maskedUrl = rawUrl.replace(/:([^:@/]+)@/, ':***@')
+    }
+  }
+  console.log(`[${new Date().toISOString()}] Initializing Prisma Client (NODE_ENV=${process.env.NODE_ENV}, DATABASE_URL=${maskedUrl})`)
 }
 
 export const prisma = globalForPrisma.prisma ?? new PrismaClient()
